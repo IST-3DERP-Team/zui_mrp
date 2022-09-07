@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:sap="http://www.sap.com/Protocols/SAPData">
+    <edmx:Reference Uri="http://159.138.39.203:8000/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMON',Version='0001',SAP__Origin='')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="http://159.138.39.203:8000/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_CAPABILITIES',Version='0001',SAP__Origin='')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="Org.OData.Capabilities.V1" Alias="Capabilities"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="http://159.138.39.203:8000/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMUNICATION',Version='0001',SAP__Origin='')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="http://159.138.39.203:8000/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_AGGREGATION',Version='0001',SAP__Origin='')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="Aggregation"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="http://159.138.39.203:8000/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_PERSONALDATA',Version='0001',SAP__Origin='')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.PersonalData.v1" Alias="PersonalData"/>
+    </edmx:Reference>
+    <edmx:DataServices m:DataServiceVersion="2.0">
+        <Schema Namespace="ZVB_3DERP_MRPFILTER_CDS" xml:lang="en" sap:schema-version="1" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+            <EntityType Name="ZVB_3DERP_MRPCUSTGRPType" sap:label="MRP Customer Group" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="CUSTGRP"/>
+                </Key>
+                <Property Name="CUSTGRP" Type="Edm.String" Nullable="false" MaxLength="2" sap:display-format="UpperCase" sap:label="Customer Group"/>
+            </EntityType>
+            <EntityType Name="ZVB_3DERP_MRPFILTERType" sap:label="MRP Filter" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="TransNo"/>
+                    <PropertyRef Name="TransItm"/>
+                </Key>
+                <Property Name="TransNo" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="TransItm" Type="Edm.String" Nullable="false" MaxLength="4" sap:display-format="NonNegative"/>
+                <Property Name="PLANTCD" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Plant" sap:value-list="standard"/>
+                <Property Name="PURCHGRP" Type="Edm.String" MaxLength="10" sap:value-list="standard"/>
+                <Property Name="IONO" Type="Edm.String" MaxLength="8" sap:display-format="UpperCase" sap:label="IO Number" sap:quickinfo="Data Element  for 3DERP IO Number field" sap:value-list="standard"/>
+                <Property Name="MATTYPE" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Material type" sap:value-list="standard"/>
+                <Property Name="MATGRP" Type="Edm.String" MaxLength="9" sap:display-format="UpperCase" sap:label="Material Group" sap:value-list="standard"/>
+                <Property Name="CUSTGRP" Type="Edm.String" MaxLength="10" sap:value-list="standard"/>
+            </EntityType>
+            <EntityType Name="ZVB_3DERP_MRPIOType" sap:label="MRP IO Number" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="IONO"/>
+                </Key>
+                <Property Name="IONO" Type="Edm.String" Nullable="false" MaxLength="8" sap:display-format="UpperCase" sap:text="DESCRIPTION" sap:label="IO Number" sap:quickinfo="Data Element  for 3DERP IO Number field"/>
+                <Property Name="DESCRIPTION" Type="Edm.String" MaxLength="50"/>
+                <Property Name="PRODPLANT" Type="Edm.String" MaxLength="10"/>
+                <Property Name="CUSTGRP" Type="Edm.String" MaxLength="10"/>
+            </EntityType>
+            <EntityType Name="ZVB_3DERP_MRPMATGRPType" sap:label="MRP Material Group" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="MATGRP"/>
+                </Key>
+                <Property Name="MATGRP" Type="Edm.String" Nullable="false" MaxLength="9" sap:display-format="UpperCase" sap:label="Material Group"/>
+            </EntityType>
+            <EntityType Name="ZVB_3DERP_MRPMATTYPEType" sap:label="MRP Material Type" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="MATTYPE"/>
+                </Key>
+                <Property Name="MATTYPE" Type="Edm.String" Nullable="false" MaxLength="4" sap:display-format="UpperCase" sap:text="DESCRIPTION" sap:label="Material type"/>
+                <Property Name="DESCRIPTION" Type="Edm.String" MaxLength="25" sap:label="Material Type Descr." sap:quickinfo="Description of Material Type"/>
+            </EntityType>
+            <EntityType Name="ZVB_3DERP_MRPPLANTType" sap:label="MRP Plant" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="PLANTCD"/>
+                </Key>
+                <Property Name="PLANTCD" Type="Edm.String" Nullable="false" MaxLength="4" sap:display-format="UpperCase" sap:text="DESCRIPTION" sap:label="Plant"/>
+                <Property Name="DESCRIPTION" Type="Edm.String" MaxLength="30" sap:label="Name 1" sap:quickinfo="Name"/>
+            </EntityType>
+            <EntityType Name="ZVB_3DERP_MRPPURCHGRPType" sap:label="MRP Purchase Group" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="PURCHGRP"/>
+                </Key>
+                <Property Name="PURCHGRP" Type="Edm.String" Nullable="false" MaxLength="3" sap:display-format="UpperCase" sap:text="DESCRIPTION" sap:label="Purchasing Group"/>
+                <Property Name="DESCRIPTION" Type="Edm.String" MaxLength="18" sap:label="Description p. group" sap:quickinfo="Description of purchasing group"/>
+            </EntityType>
+            <EntityContainer Name="ZVB_3DERP_MRPFILTER_CDS_Entities" m:IsDefaultEntityContainer="true" sap:message-scope-supported="true" sap:supported-formats="atom json xlsx">
+                <EntitySet Name="ZVB_3DERP_MRPCUSTGRP" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPCUSTGRPType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="ZVB_3DERP_MRPFILTER" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="ZVB_3DERP_MRPIO" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPIOType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="ZVB_3DERP_MRPMATGRP" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPMATGRPType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="ZVB_3DERP_MRPMATTYPE" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPMATTYPEType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="ZVB_3DERP_MRPPLANT" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPPLANTType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="ZVB_3DERP_MRPPURCHGRP" EntityType="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPPURCHGRPType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+            </EntityContainer>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType/PLANTCD" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="MRP Plant"/>
+                        <PropertyValue Property="CollectionPath" String="ZVB_3DERP_MRPPLANT"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="PLANTCD"/>
+                                    <PropertyValue Property="ValueListProperty" String="PLANTCD"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="DESCRIPTION"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType/PURCHGRP" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="MRP Purchase Group"/>
+                        <PropertyValue Property="CollectionPath" String="ZVB_3DERP_MRPPURCHGRP"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="PURCHGRP"/>
+                                    <PropertyValue Property="ValueListProperty" String="PURCHGRP"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="DESCRIPTION"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType/IONO" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="MRP IO Number"/>
+                        <PropertyValue Property="CollectionPath" String="ZVB_3DERP_MRPIO"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="IONO"/>
+                                    <PropertyValue Property="ValueListProperty" String="IONO"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="DESCRIPTION"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="PRODPLANT"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="CUSTGRP"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType/MATTYPE" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="MRP Material Type"/>
+                        <PropertyValue Property="CollectionPath" String="ZVB_3DERP_MRPMATTYPE"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="MATTYPE"/>
+                                    <PropertyValue Property="ValueListProperty" String="MATTYPE"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="DESCRIPTION"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType/MATGRP" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="MRP Material Group"/>
+                        <PropertyValue Property="CollectionPath" String="ZVB_3DERP_MRPMATGRP"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="MATGRP"/>
+                                    <PropertyValue Property="ValueListProperty" String="MATGRP"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTERType/CUSTGRP" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="MRP Customer Group"/>
+                        <PropertyValue Property="CollectionPath" String="ZVB_3DERP_MRPCUSTGRP"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="CUSTGRP"/>
+                                    <PropertyValue Property="ValueListProperty" String="CUSTGRP"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ZVB_3DERP_MRPFILTER_CDS.ZVB_3DERP_MRPFILTER_CDS_Entities" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Aggregation.ApplySupported">
+                    <Record>
+                        <PropertyValue Property="Transformations">
+                            <Collection>
+                                <String>aggregate</String>
+                                <String>groupby</String>
+                                <String>filter</String>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="Rollup" EnumMember="None"/>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <atom:link rel="self" href="http://159.138.39.203:8000/sap/opu/odata/sap/ZVB_3DERP_MRPFILTER_CDS/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
+            <atom:link rel="latest-version" href="http://159.138.39.203:8000/sap/opu/odata/sap/ZVB_3DERP_MRPFILTER_CDS/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>

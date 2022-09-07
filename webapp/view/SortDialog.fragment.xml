@@ -1,0 +1,88 @@
+<core:FragmentDefinition
+		xmlns="sap.m"
+        xmlns:f="sap.ui.layout.form"
+		xmlns:core="sap.ui.core"
+        xmlns:uit="sap.ui.table"
+        id="fragment-1" 
+        fragmentName="fragment1">
+    <Dialog contentWidth="380px" 
+        contentHeight="350px"
+        verticalScrolling="true"
+        title="Sort by"
+        resizable="true"
+        draggable="true"
+        beforeOpen="beforeOpenColSort">
+        <subHeader> 
+            <Toolbar>
+                <ToolbarSpacer/>
+                <Button id="btnColSortSelectAll" 
+                    icon="sap-icon://multiselect-all"
+                    press="onColSortSelectAll"/>
+                <Button id="btnColSortDeSelectAll" 
+                    icon="sap-icon://multiselect-none"
+                    press="onColSortDeSelectAll"/>
+                <Button id="btnColSortRowFirst" 
+                    icon="sap-icon://collapse-group"
+                    press="onColSortRowFirst"/>
+                <Button id="btnColSortRowUp" 
+                    icon="sap-icon://navigation-up-arrow"
+                    press="onColSortRowUp"/>                        
+                <Button id="btnColSortRowDown" 
+                    icon="sap-icon://navigation-down-arrow"
+                    press="onColSortRowDown"/>
+                <Button id="btnColSortRowLast" 
+                    icon="sap-icon://expand-group"
+                    press="onColSortRowLast"/>                        
+            </Toolbar>
+        </subHeader>
+        <beginButton>
+			<Button type="Emphasized" text="OK" press=".onColSortConfirm" width="4rem" />
+		</beginButton>
+        <endButton>
+			<Button text="Cancel" press=".onColSortCancel"/>
+		</endButton>
+        <uit:Table id="tabSort"
+            class="tabColumnRowsBgColor"
+            rows="{/items}"
+            columnHeaderVisible="false"
+            visibleRowCount="{/rowCount}"
+            selectionMode="MultiToggle"            
+            cellClick="onColSortCellClick">
+            <!-- <uit:extension>
+                <Toolbar>
+                    <ToolbarSpacer/>
+                    <Button id="btnColSortSelectAll" 
+                        icon="sap-icon://multiselect-all"
+                        press="onColSortSelectAll"/>
+                    <Button id="btnColSortDeSelectAll" 
+                        icon="sap-icon://multiselect-none"
+                        press="onColSortDeSelectAll"/>
+                    <Button id="btnColSortRowDown" 
+                        icon="sap-icon://slim-arrow-down"
+                        press="onColSortRowDown"/>
+                    <Button id="btnColSortRowUp" 
+                        icon="sap-icon://slim-arrow-up"
+                        press="onColSortRowUp"/>                        
+                </Toolbar>
+            </uit:extension>              -->
+            <uit:columns>
+                <uit:Column width="12rem">
+                    <Label text="" />
+                    <uit:template>
+                        <Text text="{label}" wrapping="false" />
+                    </uit:template>
+                </uit:Column>
+                <uit:Column width="9rem">
+                    <Label text="" />
+                    <uit:template>
+                        <Select id="selSortOrder" selectedKey="{sortOrder}">
+                            <core:Item key="Ascending" text="Ascending" />
+                            <core:Item key="Descending" text="Descending" />
+                        </Select>
+                    </uit:template>
+                </uit:Column>                
+            </uit:columns>
+        </uit:Table>  
+  
+    </Dialog>
+</core:FragmentDefinition>

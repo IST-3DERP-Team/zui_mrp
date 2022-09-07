@@ -1,0 +1,54 @@
+<core:FragmentDefinition
+		xmlns="sap.m"
+        xmlns:f="sap.ui.layout.form"
+		xmlns:core="sap.ui.core"
+        xmlns:uit="sap.ui.table"
+        id="fragment-1" 
+        fragmentName="fragment1">
+    <Dialog contentWidth="440px" 
+        contentHeight="350px"
+        title="Filter by"
+        resizable="true"
+        draggable="true">
+        <beginButton>
+			<Button type="Emphasized" text="OK" press=".onColFilterConfirm" width="4rem" />
+		</beginButton>
+        <endButton>
+			<Button text="Cancel" press=".onColFilterCancel"/>
+		</endButton>
+        <!-- <buttons>
+            <Button type="Emphasized" text="OK" press=".onFilterConfirm" width="4rem" />
+            <Button text="Cancel" press=".onFilterCancel"/>
+        </buttons>        -->
+        <uit:Table
+            rows="{/items}"
+            columnHeaderVisible="false"
+            selectionMode="None"
+            visibleRowCount="{/rowCount}"
+            paste="onPaste">
+            <uit:columns>
+                <uit:Column width="12rem">
+                    <Label text="Column" />
+                    <uit:template>
+                        <Text text="{label}" wrapping="false" />
+                    </uit:template>
+                </uit:Column>
+                <uit:Column width="15rem">
+                    <Label text="Value" />
+                    <uit:template>
+                        <Input value="{value}"/>
+                    </uit:template>
+                </uit:Column>
+                <uit:Column width="10rem" visible="false">
+                    <Label text="Connector" />
+                    <uit:template>
+                        <Select id="GmcCon" selectedKey="{connector}">
+                            <core:Item key="EQ" text="Equal" />
+                            <core:Item key="Contains" text="Contains" />
+                        </Select>
+                    </uit:template>
+                </uit:Column>
+            </uit:columns>
+        </uit:Table>    
+    </Dialog>
+</core:FragmentDefinition>
