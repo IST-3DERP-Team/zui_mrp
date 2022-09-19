@@ -1,1 +1,6 @@
 /* Enter your custom styles here */
+panel {
+    background-color: blue;
+    z-index: 2;
+    position: relative;
+}

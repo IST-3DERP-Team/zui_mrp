@@ -32,7 +32,15 @@ server:
             metadataXmlPath: ./webapp/localService/mainService/metadata.xml
             mockdataRootPath: ./webapp/localService/mainService/data
             generateMockData: true
-          - urlPath: /sap/opu/odata/sap/ZVB_3DERP_MRPFILTER_CDS
+          - urlPath: /sap/opu/odata/sap/ZVB_3DERP_MRPFILTER_CDS/
             metadataXmlPath: ./webapp/localService/ZVB_3DERP_MRPFILTER_CDS/metadata.xml
             mockdataRootPath: ./webapp/localService/ZVB_3DERP_MRPFILTER_CDS/mockdata
+            generateMockData: true
+          - urlPath: /sap/opu/odata/sap/ZGW_3DERP_COMMON_SRV/
+            metadataXmlPath: ./webapp/localService/ZGW_3DERP_COMMON_SRV/metadata.xml
+            mockdataRootPath: ./webapp/localService/ZGW_3DERP_COMMON_SRV/mockdata
+            generateMockData: true
+          - urlPath: /sap/opu/odata/sap/ZGW_3DERP_RFC_SRV/
+            metadataXmlPath: ./webapp/localService/ZGW_3DERP_RFC_SRV/metadata.xml
+            mockdataRootPath: ./webapp/localService/ZGW_3DERP_RFC_SRV/mockdata
             generateMockData: true

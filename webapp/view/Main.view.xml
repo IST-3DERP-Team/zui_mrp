@@ -10,7 +10,8 @@
     height="100%">
 
     <VBox id="vbMRP" fitContainer="true">
-        <sfb:SmartFilterBar id="sfbMRP" entitySet="ZVB_3DERP_MRPFILTER" search="onSearchMrpHdr" persistencyKey="3DERP_MRPKey" filterContainerWidth="14rem">
+        <sfb:SmartFilterBar id="sfbMRP" entitySet="ZVB_3DERP_MRPFILTER" enableBasicSearch="true" search="onSearchMrpHdr" 
+            persistencyKey="3DERP_MRPKey" filterContainerWidth="14rem" useToolbar="true" showClearOnFB="true" initialise="onSFBInitialise">
             <sfb:controlConfiguration>
                 <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="Plant" controlType="dropDownList" 
                     displayBehaviour="idAndDescription" mandatory="mandatory">
@@ -128,29 +129,45 @@
             <uiT:extension>
                 <Toolbar>
                     <ToolbarSpacer/>
+                    <!-- <SearchField
+                        id="searchFieldMrpHdr"
+                        placeholder="Filter"
+                        value=""
+                        search="filterGlobally"
+                        width="15rem"/> -->
+                    <!-- <ToolbarSeparator/> -->
                     <Button id="btnReserveMrpHdr" 
+                        icon="sap-icon://basket"
                         text="Reserve"
                         press="onReserveMrpHdr"
                         visible="true"/>
                     <Button id="btnResetMrpHdr" 
+                        icon="sap-icon://reset"
                         text="Reset"
                         press="onResetMrpHdr"
                         visible="true"/>
                     <Button id="btnExecuteMrpHdr" 
+                        icon="sap-icon://feeder-arrow"
                         text="Execute"
                         press="onExecuteMrpHdr" 
                         visible="true" />
-                    <Button id="btnRefreshMrpHdr" 
+                    <!-- <Button id="btnRefreshMrpHdr" 
                         icon="sap-icon://refresh"
+                        text="Refresh"
                         press="onRefreshMrpHdr"
-                        visible="true"/>
+                        visible="true"/> -->
+                    <Button id="btnColPropMrpHdr" 
+                        icon="sap-icon://table-column"
+                        press="onColumnProp"
+                        tooltip="Columns"
+                        visible="false" />
                 </Toolbar>
             </uiT:extension>
             <uiT:layoutData>
                 <FlexItemData growFactor="1" baseSize="0%"/>
             </uiT:layoutData>
         </uiT:Table>
-
+        
         <uiT:Table id="mrpDtlTab"
             class="tablePadding"
             rows="{mrpDtl>/results}"
@@ -158,7 +175,8 @@
             showColumnVisibilityMenu="true"
             enableColumnFreeze="true"
             enableCellFilter="true"
-            selectionMode="MultiToggle"
+            selectionMode="Single"
+            selectionBehavior="RowOnly"
             cellClick="onCellClickMrpDtl"
             sort="onSorted"
             rowSelectionChange="onRowSelectionChangeMrpDtl">
@@ -167,21 +185,30 @@
                     <ToolbarSpacer/>
                     <Button id="btnEditMrpDtl"
                         icon="sap-icon://edit"
+                        text="Edit"
                         press="onEditMrpDtl"
                         tooltip="Edit"
                         visible="true"/>
                     <Button id="btnSaveMrpDtl" 
                         icon="sap-icon://save"
+                        text="Save"
                         press="onSaveMrpDtl" 
                         visible="false" />
                     <Button id="btnCancelMrpDtl" 
                         icon="sap-icon://sys-cancel"
+                        text="Cancel"
                         press="onCancelMrpDtl" 
                         visible="false" />                                        
                     <Button id="btnRefreshMrpDtl" 
                         icon="sap-icon://refresh"
+                        text="Refresh"
                         press="onRefreshMrpDtl"
                         visible="true"/> 
+                    <Button id="btnColPropMrpDtl" 
+                        icon="sap-icon://table-column"
+                        press="onColumnProp"
+                        tooltip="Columns"
+                        visible="false" />
                 </Toolbar>
             </uiT:extension>
             <uiT:layoutData>
