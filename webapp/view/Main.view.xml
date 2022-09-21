@@ -13,32 +13,32 @@
         <sfb:SmartFilterBar id="sfbMRP" entitySet="ZVB_3DERP_MRPFILTER" enableBasicSearch="true" search="onSearchMrpHdr" 
             persistencyKey="3DERP_MRPKey" filterContainerWidth="14rem" useToolbar="true" showClearOnFB="true" initialise="onSFBInitialise">
             <sfb:controlConfiguration>
-                <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="Plant" controlType="dropDownList" 
+                <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="{ddtext>/PLANTCD}" controlType="dropDownList" 
                     displayBehaviour="idAndDescription" mandatory="mandatory">
                 </sfb:ControlConfiguration>
             </sfb:controlConfiguration>
             <sfb:controlConfiguration>
-                <sfb:ControlConfiguration id="filterPurchGrp" key="PURCHGRP" groupId="_BASIC" label="Purchase Group" controlType="dropDownList" 
+                <sfb:ControlConfiguration id="filterPurchGrp" key="PURCHGRP" groupId="_BASIC" label="{ddtext>/PURCHGRP}" controlType="dropDownList" 
                     displayBehaviour="idAndDescription" mandatory="notMandatory">
                 </sfb:ControlConfiguration>
             </sfb:controlConfiguration>
             <sfb:controlConfiguration>
-                <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="IO Number" controlType="dropDownList" 
+                <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{ddtext>/IONO}" controlType="dropDownList" 
                     displayBehaviour="idAndDescription" mandatory="notMandatory">
                 </sfb:ControlConfiguration>
             </sfb:controlConfiguration>
             <sfb:controlConfiguration>
-                <sfb:ControlConfiguration id="filterMatType" key="MATTYPE" groupId="_BASIC" label="Material Type" controlType="dropDownList" 
+                <sfb:ControlConfiguration id="filterMatType" key="MATTYPE" groupId="_BASIC" label="{ddtext>/MATTYPE}" controlType="dropDownList" 
                     displayBehaviour="idAndDescription" mandatory="notMandatory">
                 </sfb:ControlConfiguration>
             </sfb:controlConfiguration>
             <sfb:controlConfiguration>
-                <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="Material Group" controlType="dropDownList" 
+                <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="{ddtext>/MATGRP}" controlType="dropDownList" 
                     displayBehaviour="idOnly" mandatory="notMandatory">
                 </sfb:ControlConfiguration>
             </sfb:controlConfiguration>
             <sfb:controlConfiguration>
-                <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="Customer Group" controlType="dropDownList" 
+                <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="{ddtext>/CUSTGRP}" controlType="dropDownList" 
                     displayBehaviour="idOnly" mandatory="notMandatory">
                 </sfb:ControlConfiguration>
             </sfb:controlConfiguration>
@@ -46,74 +46,6 @@
 				<FlexItemData shrinkFactor="0"/>
 			</sfb:layoutData>
         </sfb:SmartFilterBar>
-        
-        <!-- <fb:FilterBar id="filterBar" header="Header"
-                            reset="onReset" search="onSearch" clear="onClear" cancel="onCancel" 
-                            filtersDialogClosed = "onFiltersDialogClosed"
-                            showRestoreButton="true" showClearButton="true">
-            <fb:filterGroupItems>
-                <fb:FilterGroupItem id="fgiPlant" groupName="__$INTERNAL$" name="A" label="Plant" partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <MultiComboBox
-                            id="cmbPlant"
-                            showSecondaryValues= "true"
-                            width="100%"
-                            items="{
-                                path: 'mrpPlant>/results',
-                                sorter: { path: 'PlantCd' }
-                            }">
-                            <core:ListItem id="liPlant" key="{mrpPlant>Plant}" text="{mrpPlant>PlantCd}" additionalText="{mrpPlant>Description}"/>
-                        </MultiComboBox>
-                    </fb:control>
-                </fb:FilterGroupItem>
-                <fb:FilterGroupItem id="fgiPurchGrp" groupName="__$INTERNAL$" name="B" label="Purch. Group" partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <ComboBox
-                            id="cmbPurchGrp"
-                            showSecondaryValues= "true"
-                            items="{
-                                path: 'mrpPurchGrp>/results',
-                                sorter: { path: 'Ekgrp' }
-                            }">
-                            <core:ListItem id="liPurchGrp" key="{mrpPurchGrp>Ekgrp}" text="{mrpPurchGrp>Ekgrp}" additionalText = "{mrpPurchGrp>Eknam}"/>
-                        </ComboBox>
-                    </fb:control>
-                </fb:FilterGroupItem>
-                <fb:FilterGroupItem id="fgiIONo" groupName="__$INTERNAL$" name="C" label="IO No." partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <ComboBox
-                            id="cmbIO"
-                            showSecondaryValues= "false"
-                            items="{
-                                path: 'mrpIO>/results',
-                                sorter: { path: 'Iono' }
-                            }">
-                            <core:ListItem id="liIO" key="{mrpIO>Iono}" text="{mrpIO>Iono}" additionalText = "{mrpIO>Iono}"/>
-                        </ComboBox>
-                    </fb:control>
-                </fb:FilterGroupItem>
-                <fb:FilterGroupItem id="fgiMatType" groupName="__$INTERNAL$" name="D" label="Material Type" partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <Input id="iptMatType" type="Text"/>
-                    </fb:control>
-                </fb:FilterGroupItem>
-                <fb:FilterGroupItem id="fgiMatGrp" groupName="__$INTERNAL$" name="E" label="Material Group" partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <Input id="iptMatGrp" type="Text"/>
-                    </fb:control>
-                </fb:FilterGroupItem>
-                <fb:FilterGroupItem id="fgiCustGrp" groupName="__$INTERNAL$" name="F" label="Customer Group" partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <Input id="iptCustGrp" type="Text"/>
-                    </fb:control>
-                </fb:FilterGroupItem>
-                <fb:FilterGroupItem id="fgiFtyStyle" groupName="__$INTERNAL$" name="G" label="Factory Style" partOfCurrentVariant="true" visibleInFilterBar="true">
-                    <fb:control>
-                        <Input id="iptFtyStyle" type="Text"/>
-                    </fb:control>
-                </fb:FilterGroupItem>
-            </fb:filterGroupItems>
-        </fb:FilterBar> -->
 
         <uiT:Table id="mrpHdrTab"
             class="tablePadding"
@@ -138,17 +70,17 @@
                     <!-- <ToolbarSeparator/> -->
                     <Button id="btnReserveMrpHdr" 
                         icon="sap-icon://basket"
-                        text="Reserve"
+                        text="{ddtext>/RESERVE}"
                         press="onReserveMrpHdr"
                         visible="true"/>
                     <Button id="btnResetMrpHdr" 
                         icon="sap-icon://reset"
-                        text="Reset"
+                        text="{ddtext>/RESET}"
                         press="onResetMrpHdr"
                         visible="true"/>
                     <Button id="btnExecuteMrpHdr" 
                         icon="sap-icon://feeder-arrow"
-                        text="Execute"
+                        text="{ddtext>/EXECUTE}"
                         press="onExecuteMrpHdr" 
                         visible="true" />
                     <!-- <Button id="btnRefreshMrpHdr" 
@@ -159,8 +91,13 @@
                     <Button id="btnColPropMrpHdr" 
                         icon="sap-icon://table-column"
                         press="onColumnProp"
-                        tooltip="Columns"
-                        visible="false" />
+                        tooltip="{ddtext>/COLUMNS}"
+                        visible="true" />
+                    <Button id="btnTabLayoutMrpHdr"
+                        icon="sap-icon://grid" 
+                        tooltip="{ddtext>/SAVELAYOUT}" 
+                        press="onSaveTableLayout"
+                        visible="true" />
                 </Toolbar>
             </uiT:extension>
             <uiT:layoutData>
@@ -185,30 +122,34 @@
                     <ToolbarSpacer/>
                     <Button id="btnEditMrpDtl"
                         icon="sap-icon://edit"
-                        text="Edit"
+                        text="{ddtext>/EDIT}"
                         press="onEditMrpDtl"
-                        tooltip="Edit"
                         visible="true"/>
                     <Button id="btnSaveMrpDtl" 
                         icon="sap-icon://save"
-                        text="Save"
+                        text="{ddtext>/SAVE}"
                         press="onSaveMrpDtl" 
                         visible="false" />
                     <Button id="btnCancelMrpDtl" 
                         icon="sap-icon://sys-cancel"
-                        text="Cancel"
+                        text="{ddtext>/CANCEL}"
                         press="onCancelMrpDtl" 
                         visible="false" />                                        
                     <Button id="btnRefreshMrpDtl" 
                         icon="sap-icon://refresh"
-                        text="Refresh"
+                        text="{ddtext>/REFRESH}"
                         press="onRefreshMrpDtl"
                         visible="true"/> 
                     <Button id="btnColPropMrpDtl" 
                         icon="sap-icon://table-column"
                         press="onColumnProp"
-                        tooltip="Columns"
-                        visible="false" />
+                        tooltip="{ddtext>/COLUMNS}"
+                        visible="true" />
+                    <Button id="btnTabLayoutMrpDtl"
+                        icon="sap-icon://grid" 
+                        tooltip="{ddtext>/SAVELAYOUT}"
+                        press="onSaveTableLayout"
+                        visible="true" />
                 </Toolbar>
             </uiT:extension>
             <uiT:layoutData>
