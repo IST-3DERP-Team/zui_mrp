@@ -88,6 +88,15 @@ sap.ui.define([
                 this.byId("btnRefreshMrpDtl").setEnabled(false);
                 this.byId("btnColPropMrpDtl").setEnabled(false);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(false);
+
+                // Add key event
+                var oDelegateKeyUpMrpHdr = {
+                    onkeyup: function(oEvent){
+                        _this.onKeyUpMrpHdr(oEvent);
+                    }
+                };
+
+                this.byId("mrpHdrTab").addEventDelegate(oDelegateKeyUpMrpHdr);
             },
 
             onSFBInitialise() {
@@ -298,7 +307,7 @@ sap.ui.define([
                         }
                     },
                     error: function (err) {
-                        _this.closeLoadingDialog(that);
+                        _this.closeLoadingDialog();
                     }
                 });
             },
@@ -312,7 +321,7 @@ sap.ui.define([
                 var aColumns = [];
 
                 oMetadata.forEach((prop, idx) => {
-                    var vCreatable = prop.Editable;
+                    var vCreatable = prop.Creatable;
                     var vUpdatable = prop.Editable;
                     var vSortable = true;
                     var vSorted = prop.Sorted;
@@ -462,6 +471,15 @@ sap.ui.define([
                 this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
                 this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
                 this.getView().getModel("ui").setProperty("/activeHdrRowPath", oEvent.getParameters().rowBindingContext.sPath);
+
+                this.onRowChangedMrpHdr();
+            },
+
+            onRowChangedMrpHdr() {
+                var sPlantCd = this.getView().getModel("ui").getProperty("/activePlantCd");
+                var sMatNo = this.getView().getModel("ui").getProperty("/activeMatNo");
+                var sTransNo = this.getView().getModel("ui").getProperty("/activeTransNo");
+                var sTransItm = this.getView().getModel("ui").getProperty("/activeTransItm");
 
                 var aMrpDtl = {results: []};
                 var aReserveList = jQuery.extend(true, [], _aReserveList);
@@ -703,6 +721,7 @@ sap.ui.define([
                         },
                         error: function(err) {
                             console.log("error", err);
+                            _this.closeLoadingDialog();
                         }
                     });
 
@@ -761,6 +780,86 @@ sap.ui.define([
                 })
 
                 this.getView().getModel(arg).setProperty("/results", aData);
+            },
+
+            onColSortCellClick: function (oEvent) {
+                this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"].getModel().setProperty("/activeRow", (oEvent.getParameters().rowIndex));
+            },
+
+            onColSortSelectAll: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];               
+                oDialog.getContent()[0].addSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
+            },
+
+            onColSortDeSelectAll: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];               
+                oDialog.getContent()[0].removeSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
+            },
+
+            onColSortRowFirst: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
+                var iActiveRow = oDialog.getModel().getData().activeRow;
+
+                var oDialogData = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"].getModel().getData().items;
+                oDialogData.filter((item, index) => index === iActiveRow)
+                    .forEach(item => item.position = 0);
+                oDialogData.filter((item, index) => index !== iActiveRow)
+                    .forEach((item, index) => item.position = index + 1);
+                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
+
+                oDialog.getModel().setProperty("/items", oDialogData);
+                oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
+            },
+
+            onColSortRowUp: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
+                var iActiveRow = oDialog.getModel().getData().activeRow;
+
+                var oDialogData = oDialog.getModel().getData().items;
+                oDialogData.filter((item, index) => index === iActiveRow).forEach(item => item.position = iActiveRow - 1);
+                oDialogData.filter((item, index) => index === iActiveRow - 1).forEach(item => item.position = item.position + 1);
+                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
+
+                oDialog.getModel().setProperty("/items", oDialogData);
+                oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
+            },
+
+            onColSortRowDown: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
+                var iActiveRow = oDialog.getModel().getData().activeRow;
+
+                var oDialogData = oDialog.getModel().getData().items;
+                oDialogData.filter((item, index) => index === iActiveRow).forEach(item => item.position = iActiveRow + 1);
+                oDialogData.filter((item, index) => index === iActiveRow + 1).forEach(item => item.position = item.position - 1);
+                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
+
+                oDialog.getModel().setProperty("/items", oDialogData);
+                oDialog.getModel().setProperty("/activeRow", iActiveRow + 1);
+            },
+
+            onColSortRowLast: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
+                var iActiveRow = oDialog.getModel().getData().activeRow;
+
+                var oDialogData = oDialog.getModel().getData().items;
+                oDialogData.filter((item, index) => index === iActiveRow)
+                    .forEach(item => item.position = oDialogData.length - 1);
+                    oDialogData.filter((item, index) => index !== iActiveRow)
+                    .forEach((item, index) => item.position = index);
+                    oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
+
+                oDialog.getModel().setProperty("/items", oDialogData);
+                oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
+            },
+
+            onColPropSelectAll: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"];               
+                oDialog.getContent()[0].addSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
+            },
+
+            onColPropDeSelectAll: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"];               
+                oDialog.getContent()[0].removeSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
             },
 
             onEditMrpDtl() {
@@ -853,7 +952,7 @@ sap.ui.define([
                 })
             },
 
-            onInputLiveTextChange: function(oEvent) {
+            onInputLiveChange: function(oEvent) {
                 var oSource = oEvent.getSource();
                 var sRowPath = oSource.getBindingInfo("value").binding.oContext.sPath;
                 var sModel = oSource.getBindingInfo("value").parts[0].model;
@@ -1085,19 +1184,147 @@ sap.ui.define([
                 this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"].close();
             },
 
+            onSorted: function(oEvent) {
+                var sColumnName = oEvent.getParameters().column.getProperty("sortProperty");
+                var sSortOrder = oEvent.getParameters().sortOrder;
+                var bMultiSort = oEvent.getParameters().columnAdded;
+                var oSortData = this._aSortableColumns[oEvent.getSource().getBindingInfo("rows").model];
+
+                if (!bMultiSort) {
+                    oSortData.forEach(item => {
+                        if (item.name === sColumnName) {
+                            item.sorted = true;
+                            item.sortOrder = sSortOrder;
+                        }
+                        else {
+                            item.sorted = false;
+                        } 
+                    })
+                }
+            },
+
+            onColSort: function(oEvent) {
+                var oTable = oEvent.getSource().oParent.oParent;               
+                var aSortableColumns = this._aSortableColumns[oTable.getBindingInfo("rows").model];
+
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
+                oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
+                oDialog.getModel().setProperty("/items", aSortableColumns);
+                oDialog.getModel().setProperty("/rowCount", aSortableColumns.length);
+                oDialog.open();
+            },
+
+            beforeOpenColSort: function(oEvent) {
+                oEvent.getSource().getContent()[0].removeSelectionInterval(0, oEvent.getSource().getModel().getData().items.length - 1);
+                oEvent.getSource().getModel().getData().items.forEach(item => {
+                    if (item.sorted) {                       
+                        oEvent.getSource().getContent()[0].addSelectionInterval(item.position, item.position);
+                    }
+                })
+            },
+
+            onColSortConfirm: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
+                oDialog.close();
+
+                var sTable = oDialog.getModel().getData().table;
+                var oTable = this.byId(sTable + "Tab");
+                var oDialogData = oDialog.getModel().getData().items;
+                var oDialogTable = oDialog.getContent()[0];
+                var aSortSelRows = oDialogTable.getSelectedIndices();
+
+                oDialogData.forEach(item => item.sorted = false);
+
+                if (aSortSelRows.length > 0) {
+                    oDialogData.forEach((item, idx) => {
+                        if (aSortSelRows.filter(si => si === idx).length > 0) {
+                            var oColumn = oTable.getColumns().filter(col => col.getProperty("sortProperty") === item.name)[0];
+                            oTable.sort(oColumn, item.sortOrder === "Ascending" ? SortOrder.Ascending : SortOrder.Descending, true);
+                            item.sorted = true;
+                        }
+                    })
+                }
+
+                this._aSortableColumns[sTable] = oDialogData;
+            },
+
+            onColSortCancel: function(oEvent) {
+                this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"].close();
+            },
+
+            onColFilter: function(oEvent) {
+                var oTable = oEvent.getSource().oParent.oParent               
+                var aFilterableColumns = this._aFilterableColumns[oTable.getBindingInfo("rows").model];
+
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.FilterDialog"];
+                oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
+                oDialog.getModel().setProperty("/items", aFilterableColumns);
+                oDialog.getModel().setProperty("/rowCount", aFilterableColumns.length);
+                oDialog.open();
+            },
+
+            onColFilterConfirm: function(oEvent) {
+                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.FilterDialog"];
+                oDialog.close();
+
+                var bFilter = false;
+                var aFilter = [];
+                var oFilter = null;
+                var sTable = oDialog.getModel().getData().table;
+                var oDialogData = oDialog.getModel().getData().items;
+
+                oDialogData.forEach(item => {
+                    if (item.value !== "") {
+                        bFilter = true;
+                        aFilter.push(new Filter(item.name, this.getConnector(item.connector), item.value))
+                    }
+                })
+                
+                if (bFilter) {
+                    oFilter = new Filter(aFilter, true);
+                    this.getView().byId("btnFilterGMC").addStyleClass("activeFiltering");
+                }
+                else {
+                    oFilter = "";
+                    this.getView().byId("btnFilterGMC").removeStyleClass("activeFiltering");
+                }
+
+                this.byId(sTable + "Tab").getBinding("rows").filter(oFilter, "Application");
+                this._aFilterableColumns[sTable] = oDialogData;
+            },
+
+            onColFilterCancel: function(oEvent) {
+                this._oViewSettingsDialog["zuimrp.view.fragments.FilterDialog"].close();
+            },
+
+            onKeyUpMrpHdr(oEvent) {
+                if ((oEvent.key === "ArrowUp" || oEvent.key === "ArrowDown") && oEvent.srcControl.sParentAggregationName === "rows") {
+                    var sRowPath = this.byId(oEvent.srcControl.sId).oBindingContexts["mrpHdr"].sPath;
+                    var oRow = this.getView().getModel("mrpHdr").getProperty(sRowPath);
+                    this.getView().getModel("ui").setProperty("/activeGmc", oRow.GMC);
+                    this.getView().getModel("ui").setProperty("/activePlantCd", oRow.PLANTCD);
+                    this.getView().getModel("ui").setProperty("/activeMatNo", oRow.MATNO);
+                    this.getView().getModel("ui").setProperty("/activeTransNo", oRow.TRANSNO);
+                    this.getView().getModel("ui").setProperty("/activeTransItm", oRow.TRANSITM);
+                    this.getView().getModel("ui").setProperty("/activeHdrRowPath", sRowPath);
+
+                    this.onRowChangedMrpHdr();
+                }
+            },
+
             showLoadingDialog(arg) {
-                if (!this._LoadingDialog) {
-                    this._LoadingDialog = sap.ui.xmlfragment("zuimrp.view.fragments.LoadingDialog", this);
-                    this.getView().addDependent(this._LoadingDialog);
+                if (!_this._LoadingDialog) {
+                    _this._LoadingDialog = sap.ui.xmlfragment("zuimrp.view.fragments.LoadingDialog", _this);
+                    _this.getView().addDependent(_this._LoadingDialog);
                 } 
                 // jQuery.sap.syncStyleClass("sapUiSizeCompact", this.getView(), this._LoadingDialog);
                 
-                this._LoadingDialog.setTitle(arg);
-                this._LoadingDialog.open();
+                _this._LoadingDialog.setTitle(arg);
+                _this._LoadingDialog.open();
             },
 
             closeLoadingDialog() {
-                this._LoadingDialog.close();
+                _this._LoadingDialog.close();
             },
 
             onSaveTableLayout: function (oEvent) {
@@ -1154,6 +1381,7 @@ sap.ui.define([
                     },
                     error: function(err) {
                         sap.m.MessageBox.error(err);
+                        _this.closeLoadingDialog();
                     }
                 });                
             },
@@ -1210,6 +1438,7 @@ sap.ui.define([
                     },
                     error: function(err) {
                         sap.m.MessageBox.error(err);
+                        _this.closeLoadingDialog();
                     }
                 });
             }
