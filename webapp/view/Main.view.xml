@@ -60,6 +60,7 @@
             rowSelectionChange="onRowSelectionChangeMrpHdr">
             <uiT:extension>
                 <Toolbar>
+                    <Text text="{ui>/rowCountMrpHdr} {ddtext>/ROWS}" />
                     <ToolbarSpacer/>
                     <!-- <SearchField
                         id="searchFieldMrpHdr"
@@ -119,6 +120,7 @@
             rowSelectionChange="onRowSelectionChangeMrpDtl">
             <uiT:extension>
                 <Toolbar>
+                    <Text text="{ui>/rowCountMrpDtl} {ddtext>/ROWS}" />
                     <ToolbarSpacer/>
                     <Button id="btnEditMrpDtl"
                         icon="sap-icon://edit"
@@ -139,7 +141,7 @@
                         icon="sap-icon://refresh"
                         text="{ddtext>/REFRESH}"
                         press="onRefreshMrpDtl"
-                        visible="true"/> 
+                        visible="false"/> 
                     <Button id="btnColPropMrpDtl" 
                         icon="sap-icon://table-column"
                         press="onColumnProp"

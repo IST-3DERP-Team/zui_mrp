@@ -4,3 +4,7 @@ panel {
     z-index: 2;
     position: relative;
 }
+
+.sapUiTableExt>.sapMTB{
+    background: white !important;
+}

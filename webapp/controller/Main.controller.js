@@ -55,6 +55,24 @@ sap.ui.define([
                 
                 this._oDataBeforeChange = {};
                 this._aInvalidValueState = [];
+
+                window.addEventListener('beforeunload', function (e) {
+                    _this.onExit();
+                    // e.preventDefault();
+                    // e.returnValue = '';
+                });
+            },
+
+            onExit: function() {
+                var oModel = this.getOwnerComponent().getModel();
+                var oEntitySet = "/MRPUnlockSet";
+
+                oModel.read(oEntitySet, {
+                    success: function (data, response) {
+                        console.log("onExit", data);
+                    },
+                    error: function (err) { }
+                })
             },
 
             initializeComponent() {
@@ -85,7 +103,7 @@ sap.ui.define([
                 this.byId("btnColPropMrpHdr").setEnabled(false);
                 this.byId("btnTabLayoutMrpHdr").setEnabled(false);
                 this.byId("btnEditMrpDtl").setEnabled(false);
-                this.byId("btnRefreshMrpDtl").setEnabled(false);
+                // this.byId("btnRefreshMrpDtl").setEnabled(false);
                 this.byId("btnColPropMrpDtl").setEnabled(false);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(false);
 
@@ -122,7 +140,11 @@ sap.ui.define([
                             }
 
                             var oJSONModel = new JSONModel();
-                            oJSONModel.setData({activeSbu: sbu});
+                            oJSONModel.setData({
+                                activeSbu: sbu,
+                                rowCountMrpHdr: "0",
+                                rowCountMrpDtl: "0"
+                            });
                             _this.getView().setModel(oJSONModel, "ui");
 
                             _this.getColumns();   
@@ -150,7 +172,7 @@ sap.ui.define([
                 this.byId("btnColPropMrpHdr").setEnabled(true);
                 this.byId("btnTabLayoutMrpHdr").setEnabled(true);
                 this.byId("btnEditMrpDtl").setEnabled(true);
-                this.byId("btnRefreshMrpDtl").setEnabled(true);
+                // this.byId("btnRefreshMrpDtl").setEnabled(true);
                 this.byId("btnColPropMrpDtl").setEnabled(true);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(true);
             },
@@ -159,31 +181,34 @@ sap.ui.define([
                 var oModel = this.getOwnerComponent().getModel();
                 oModel.read('/MRPHeaderViewSet', {
                     success: function (data, response) {
-                        //console.log("MRPHeaderViewSet", data)
-                        data.results.forEach((item, index) => {
-                            if (index === 0) {
-                                item.Active = true;
-                            }
-                            else {
-                                item.Active = false;
-                            }
-                        });
+                        console.log("MRPHeaderViewSet", data)
+                        if (data.results.length > 0) {
 
-                        var oJSONModel = new sap.ui.model.json.JSONModel();
-                        oJSONModel.setData(data);
-                        _this.getView().setModel(oJSONModel, "mrpHdr");
+                            data.results.forEach((item, index) => {
+                                if (index === 0) {
+                                    item.Active = true;
+                                }
+                                else {
+                                    item.Active = false;
+                                }
+                            });
 
-                        _this.onFilterBySmart(pFilters, pFilterGlobal);
+                            var oJSONModel = new sap.ui.model.json.JSONModel();
+                            oJSONModel.setData(data);
+                            _this.getView().setModel(oJSONModel, "mrpHdr");
+
+                            _this.onFilterBySmart(pFilters, pFilterGlobal);
+
+                            _this.getView().getModel("ui").setProperty("/activeTransNo", data.results[0].TRANSNO);
+                            _this.getView().getModel("ui").setProperty("/activeTransItm", data.results[0].TRANSITM);
+                            _this.getView().getModel("ui").setProperty("/activePlantCd", data.results[0].PLANTCD);
+                            _this.getView().getModel("ui").setProperty("/activeMatNo", data.results[0].MATNO);
+                            _this.getView().getModel("ui").setProperty("/activeHdrRowPath", "/results/0");
+                            _this.getView().getModel("ui").setProperty("/rowCountMrpHdr", data.results.length.toString());
+
+                            _this.setRowReadMode("mrpHdr");
+                        }
                         
-                        _this.getView().setModel(new JSONModel({
-                            activeTransNo: data.results[0].TRANSNO,
-                            activeTransItm: data.results[0].TRANSITM,
-                            activePlantCd: data.results[0].PLANTCD,
-                            activeMatNo: data.results[0].MATNO,
-                            activeHdrRowPath: "/results/0"
-                        }), "ui");
-
-                        _this.setRowReadMode("mrpHdr");
                         _this.closeLoadingDialog();
                     },
                     error: function (err) { 
@@ -191,6 +216,36 @@ sap.ui.define([
                         _this.closeLoadingDialog();
                     }
                 })
+            },
+
+            lockUnloadMRP(pType, pData) {
+                // var sLockedBy;
+                // var sLockedDt;
+
+                // if (pType == "LOCK") {
+                //     sLockedBy = _startUpInfo.id;
+                //     sLockedDt = dateFormat.format(new Date());
+                // } else if (pType == "UNLOCK") {
+                //     sLockedBy = "";
+                //     sLockedDt = "";
+                // }
+
+                // var oModel = this.getOwnerComponent().getModel();
+                // pData.results.forEach(item => {
+                //     var entitySet = "/MRPHeaderSet(TRANSNO='" + item.TRANSNO +"',TRANSITM='" + item.TRANSITM + "')";
+                //     var param = {
+                //         "LOCKEDBY": sLockedBy,
+                //         "LOCKEDDT": sLockedDt
+                //     }
+
+                //     oModel.update(entitySet, param, {
+                //         method: "PUT",
+                //         success: function(data, oResponse) {
+                            
+                //         },
+                //         error: function(err) {}
+                //     });
+                // })
             },
 
             onFilterBySmart(pFilters, pFilterGlobal) {
@@ -460,6 +515,23 @@ sap.ui.define([
                 })
             },
 
+            onRowSelectionChangeMrpHdr: function(oEvent) {
+                var sPath = oEvent.getParameters().rowContext.sPath;
+
+                var sPlantCd = _this.getView().getModel("mrpHdr").getProperty(sPath).PLANTCD;
+                var sMatNo =  _this.getView().getModel("mrpHdr").getProperty(sPath).MATNO;
+                var sTransNo =  _this.getView().getModel("mrpHdr").getProperty(sPath).TRANSNO;
+                var sTransItm =  _this.getView().getModel("mrpHdr").getProperty(sPath).TRANSITM;
+
+                this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
+                this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
+                this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
+                this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
+                this.getView().getModel("ui").setProperty("/activeHdrRowPath", sPath);
+                
+                this.onRowChangedMrpHdr();
+            },
+
             onCellClickMrpHr: function(oEvent) {
                 var sPlantCd = oEvent.getParameters().rowBindingContext.getObject().PLANTCD;
                 var sMatNo = oEvent.getParameters().rowBindingContext.getObject().MATNO;
@@ -488,13 +560,14 @@ sap.ui.define([
                 aMrpDtl.results.forEach(item => {
                     var aFormr = _aForMrList.filter(x => x.PLANTCD == item.PLANTCD && x.MATNO == item.MATNO && 
                         x.SLOC == item.SLOC && x.BATCH == item.BATCH);
+                        
                     if (aFormr && aFormr.length > 0) {
                         var iSumFormr = 0.000;
                         aFormr.forEach(x => {
-                            iSumFormr += parseFloat(x.Formr);
+                            iSumFormr += parseFloat(x.FORMR);
                         })
 
-                        item.BALANCE = item.NETAVAILQTY - iSumFormr;
+                        item.BALANCE = (item.NETAVAILQTY - iSumFormr).toFixed(3);
 
                         var oFormr = aFormr.filter(x => x.TRANSNO == sTransNo && x.TRANSITM == sTransItm);
                         item.FORMR = (oFormr.length > 0 ? oFormr[0].FORMR : 0.000);
@@ -504,6 +577,7 @@ sap.ui.define([
                 var oJSONModel = new sap.ui.model.json.JSONModel();
                 oJSONModel.setData(aMrpDtl);
                 this.getView().setModel(oJSONModel, "mrpDtl");
+                this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
             },
 
             createViewSettingsDialog: function (arg1, arg2) {
@@ -576,11 +650,11 @@ sap.ui.define([
                     var sTransNo = aDataMrpHdr[0].TRANSNO;
                     var sTransItm = aDataMrpHdr[0].TRANSITM;
 
-                    this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
-                    this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
-                    this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
-                    this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
-                    this.getView().getModel("ui").setProperty("/activeHdrRowPath", '/results/0');
+                    // this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
+                    // this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
+                    // this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
+                    // this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
+                    // this.getView().getModel("ui").setProperty("/activeHdrRowPath", '/results/0');
 
                     var oModel = this.getOwnerComponent().getModel();
                     var oEntitySet = "/MRPDetailViewSet";
@@ -606,6 +680,7 @@ sap.ui.define([
                                     aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.MATNO == sMatNo));
                                     oJSONModel.setData(aMrpDtl);
                                     _this.getView().setModel(oJSONModel, "mrpDtl");
+                                    _this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
                                 }
 
                                 _this.closeLoadingDialog();
@@ -641,94 +716,147 @@ sap.ui.define([
             },
 
             onExecuteMrpHdr() {
-                this.showLoadingDialog("Loading...");
-
                 var oTable = this.getView().byId("mrpHdrTab");
                 var aSelIdx = oTable.getSelectedIndices();
 
-                if (aSelIdx.length > 0 && _aForMrList.length > 0) {
-                    var aMrTab = [];
-                    var aPrTab = [];
+                if (aSelIdx.length > 0) { // && _aForMrList.length > 0
+                    MessageBox.confirm(_oCaption.CONFIRM_PROCEED_EXECUTE, {
+                        actions: ["Yes", "No"],
+                        onClose: function (sAction) {
+                            if (sAction == "Yes") {
+                                _this.showLoadingDialog("Loading...");
 
-                    aSelIdx.forEach(selIdx => {
-                        var sPath = oTable.getContextByIndex(selIdx).sPath;
-                        var oMrpHdr = this.getView().getModel("mrpHdr").getProperty(sPath);
+                                var aMrTab = [];
+                                var aPrTab = [];
+                                var aImBatchTab = [];
 
-                        var aForMr = _aForMrList.filter(x => x.Transno == oMrpHdr.Transno && x.Transitm == oMrpHdr.Transitm);
-                        if (aForMr.length > 0) {
-                            aForMr.forEach(item => {
-                                var oForMr = {
-                                    "Bwart": (oMrpHdr.MATTYPE == item.MATTYPE ? "921" : "923"),
-                                    "Issplant": item.PLANTCD,
-                                    "Isssloc": item.SLOC,
-                                    "Issmatno": item.MATNO,
-                                    "Issbatch": item.BATCH,
-                                    "Reqdqty": item.FORMR,
-                                    "Issuom": oMrpHdr.BASEUOM,
-                                    "Rcvplant": oMrpHdr.PLANTCD,
-                                    "Rcvmatno": oMrpHdr.MATNO,
-                                    "Rcvbatch": item.BATCH,
-                                    "Rcvsloc": item.SLOC,
-                                    "Createdby": _startUpInfo.id,
-                                    "Transno": oMrpHdr.TRANSNO,
-                                    "Transitm": oMrpHdr.TRANSITM
-                                };
+                                aSelIdx.forEach(selIdx => {
+                                    var sPath = oTable.getContextByIndex(selIdx).sPath;
+                                    var oMrpHdr = _this.getView().getModel("mrpHdr").getProperty(sPath);
 
-                                aMrTab.push(oForMr);
-                            })
-                        }
+                                    var aForMr = _aForMrList.filter(x => x.TRANSNO == oMrpHdr.TRANSNO && x.TRANSITM == oMrpHdr.TRANSITM);
+                                    if (aForMr.length > 0) {
+                                        aForMr.forEach(item => {
+                                            var oImBatchTab = {
+                                                "Transcheck": "TPCHK",
+                                                "Seqno": "1",
+                                                "Issmatno": item.MATNO,
+                                                "Rcvmatno": oMrpHdr.MATNO,
+                                                "Issbatch": item.BATCH,
+                                                "Rcviono": oMrpHdr.IONO,
+                                                "Rcvcustgrp": oMrpHdr.CUSTGRP,
+                                                "Rcvsalesgrp": oMrpHdr.SALESGRP,
+                                                "Xfertolia": "",
+                                                "Userid": _startUpInfo.id,
+                                            }
 
-                        var oForPr = {
-                            "PurGroup": oMrpHdr.PURCHGRP,
-                            "ShortText": oMrpHdr.GMCDESCEN.substr(0, 40),
-                            "Material": oMrpHdr.MATNO,
-                            "Plant": oMrpHdr.PLANTCD,
-                            "MatGrp": oMrpHdr.MATGRP,
-                            "Quantity": oMrpHdr.FORPR,
-                            "Unit": oMrpHdr.BASEUOM,
-                            "Batch": oMrpHdr.IONO,
-                            "FixedVend": oMrpHdr.VENDORCD,
-                            "PurchOrg": oMrpHdr.PURCHORG,
-                            "ProcuringPlant": oMrpHdr.PLANTCD,
-                            "Currency": oMrpHdr.CURRENCYCD,
-                            "PoPrice": oMrpHdr.UNITPRICE,
-                            "Salesgrp": oMrpHdr.SALESGRP,
-                            "Custgrp": oMrpHdr.CUSTGRP,
-                            "Shiptoplant": oMrpHdr.PLANTCD,
-                            "Materialtype": oMrpHdr.MATTYPE,
-                            "Transno": oMrpHdr.TRANSNO,
-                            "Transitm": oMrpHdr.TRANSITM
-                        }
+                                            aImBatchTab.push(oImBatchTab);
+                                        });
 
-                        aPrTab.push(oForPr);
-                        
-                    })
+                                        aForMr.forEach(item => {
+                                            var oForMr = {
+                                                "Bwart": (oMrpHdr.MATTYPE == item.MATTYPE ? "921" : "923"),
+                                                "Issplant": item.PLANTCD,
+                                                "Isssloc": item.SLOC,
+                                                "Issmatno": item.MATNO,
+                                                "Issbatch": item.BATCH,
+                                                "Reqdqty": item.FORMR,
+                                                "Issuom": oMrpHdr.BASEUOM,
+                                                "Rcvplant": oMrpHdr.PLANTCD,
+                                                "Rcvmatno": oMrpHdr.MATNO,
+                                                "Rcvbatch": "",
+                                                "Rcvsloc": item.SLOC,
+                                                "Createdby": _startUpInfo.id,
+                                                "Transno": oMrpHdr.TRANSNO,
+                                                "Transitm": oMrpHdr.TRANSITM
+                                            };
 
-                    var oParam = {};
-                    var oModel = this.getOwnerComponent().getModel("ZGW_3DERP_RFC_SRV");
+                                            aMrTab.push(oForMr);
+                                        })
+                                    }
 
-                    oParam["N_IOMrp_Imp_Mrtab"] = aMrTab;
-                    oParam["N_IOMrp_Imp_Prtab"] = aPrTab;
-                    oParam["N_IOMrp_Exp_Mrtab"] = [];
-                    oParam["N_IOMrp_Exp_Prtab"] = [];
-                    oParam["N_IOMrp_Exp_Retmsg"] = [];
+                                    var oForPr = {
+                                        "PurGroup": oMrpHdr.PURCHGRP,
+                                        "ShortText": oMrpHdr.GMCDESCEN.substr(0, 40),
+                                        "Material": oMrpHdr.MATNO,
+                                        "Plant": oMrpHdr.PLANTCD,
+                                        "MatGrp": oMrpHdr.MATGRP,
+                                        "Quantity": oMrpHdr.FORPR,
+                                        "Unit": oMrpHdr.BASEUOM,
+                                        "Batch": oMrpHdr.IONO,
+                                        "FixedVend": oMrpHdr.VENDORCD,
+                                        "PurchOrg": oMrpHdr.PURCHORG,
+                                        "ProcuringPlant": oMrpHdr.PLANTCD,
+                                        "Currency": oMrpHdr.CURRENCYCD,
+                                        "PoPrice": oMrpHdr.UNITPRICE,
+                                        "Salesgrp": oMrpHdr.SALESGRP,
+                                        "Custgrp": oMrpHdr.CUSTGRP,
+                                        "Shiptoplant": oMrpHdr.PLANTCD,
+                                        "Materialtype": oMrpHdr.MATTYPE,
+                                        "Transno": oMrpHdr.TRANSNO,
+                                        "Transitm": oMrpHdr.TRANSITM
+                                    }
 
-                    console.log(oParam)
-                    oModel.create("/EMrtabSet", oParam, {
-                        method: "POST",
-                        success: function(oResult, oResponse) {
-                            console.log(oResult);
-                        },
-                        error: function(err) {
-                            console.log("error", err);
-                            _this.closeLoadingDialog();
+                                    aPrTab.push(oForPr);
+                                })
+
+                                var oParam = {};
+                                var oParamSeq = {};
+                                var oModel = _this.getOwnerComponent().getModel("ZGW_3DERP_RFC_SRV");
+
+                                oParamSeq["N_ImBatchTab"] = aImBatchTab;
+                                oParamSeq["N_MatBatchTab"] = []
+                                oParamSeq["N_ExReturnTab"] = [];
+
+                                //console.log("CreateBatchSeq", oParamSeq)
+                                oModel.create("/CreateBatchSeqSet", oParamSeq, {
+                                    method: "POST",
+                                    success: function(oResult, oResponse) {
+                                        //console.log("CreateBatchSeqSet", oResult);
+                                        oResult["N_MatBatchTab"].results.forEach((itemBatch, itemIdx) => {
+                                            aMrTab[itemIdx].Rcvbatch = itemBatch.Batch;
+                                        })
+
+                                        oParam["N_IOMrp_Imp_Mrtab"] = aMrTab;
+                                        oParam["N_IOMrp_Imp_Prtab"] = aPrTab;
+                                        oParam["N_IOMrp_Exp_Mrtab"] = [];
+                                        oParam["N_IOMrp_Exp_Prtab"] = [];
+                                        oParam["N_IOMrp_Exp_Retmsg"] = [];
+
+                                        console.log("onExecuteMrpHdr", oParam)
+                                        oModel.create("/EMrtabSet", oParam, {
+                                            method: "POST",
+                                            success: function(oResult, oResponse) {
+                                                console.log(oResult);
+                                                MessageBox.information(_oCaption.INFO_EXECUTE_SUCCESS);
+
+                                                _this.getView().getModel("mrpDtl").setProperty("/results", []);
+                                                _this.onSearchMrpHdr();
+                                                _aReserveList = [];
+                                                _aForMrList = [];
+                                            },
+                                            error: function(err) {
+                                                MessageBox.error(_oCaption.INFO_EXECUTE_FAIL);
+                                                console.log("error", err);
+                                                _this.closeLoadingDialog();
+                                            }
+                                        });
+
+                                        _this.closeLoadingDialog();
+                                    },
+                                    error: function(err) {
+                                        MessageBox.error(_oCaption.INFO_EXECUTE_FAIL);
+                                        console.log("error", err);
+                                    }
+                                });
+                            }
                         }
                     });
 
-                    _this.closeLoadingDialog();
-                } else if (_aForMrList.length == 0) {
-                    MessageBox.warning(_oCaption.INFO_NO_DATA_EXEC);
-                    _this.closeLoadingDialog();
+                    
+                // } else if (_aForMrList.length == 0) {
+                //     MessageBox.warning(_oCaption.INFO_NO_DATA_EXEC);
+                //     _this.closeLoadingDialog();
                 } else {
                     MessageBox.warning(_oCaption.INFO_NO_SELECTED);
                     _this.closeLoadingDialog();
@@ -743,7 +871,8 @@ sap.ui.define([
                             if (ci.type === "STRING" || ci.type === "NUMBER") {
                                 col.setTemplate(new sap.m.Text({
                                     text: "{" + arg + ">" + ci.name + "}",
-                                    maxLines: 1
+                                    wrapping: false,
+                                    tooltip: "{" + arg + ">" + ci.name + "}"
                                 }));
                             }
                             else if (ci.type === "BOOLEAN") {
@@ -869,7 +998,7 @@ sap.ui.define([
                     this.byId("btnEditMrpDtl").setVisible(false);
                     this.byId("btnSaveMrpDtl").setVisible(true);
                     this.byId("btnCancelMrpDtl").setVisible(true);
-                    this.byId("btnRefreshMrpDtl").setVisible(false);
+                    // this.byId("btnRefreshMrpDtl").setVisible(false);
                     this.byId("btnColPropMrpDtl").setVisible(false);
                     this.byId("btnTabLayoutMrpDtl").setVisible(false);
 
@@ -991,10 +1120,10 @@ sap.ui.define([
                     })
                 }
 
-                _this.onForPrChange(oEvent);
+                _this.onForMrChange(oEvent);
             },
 
-            onForPrChange: function(oEvent) {
+            onForMrChange: function(oEvent) {
                 var oSource = oEvent.getSource();
                 var sRowPath = oSource.getBindingInfo("value").binding.oContext.sPath;
                 var sModel = oSource.getBindingInfo("value").parts[0].model;
@@ -1016,7 +1145,7 @@ sap.ui.define([
                 }
 
                 var iBalance = oModel.NETAVAILQTY - iSumFormr - (iNewValue ? iNewValue : 0);
-                _this.getView().getModel(sModel).setProperty(sRowPath + "/BALANCE", iBalance);
+                _this.getView().getModel(sModel).setProperty(sRowPath + "/BALANCE", iBalance.toFixed(3));
             },
 
             onSaveMrpDtl() {
@@ -1078,18 +1207,18 @@ sap.ui.define([
                         }
                     })
 
-                    this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORMR", dSumFormr);
+                    this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORMR", dSumFormr.toFixed(3));
 
                     // Update Mrp Header column For Pr
                     var oMrpHdr = this.getView().getModel("mrpHdr").getProperty(sRowPath);
                     var dBalance = parseFloat(oMrpHdr.BALANCE - dSumFormr);
                     
-                    this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORPR", dBalance);
+                    this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORPR", dBalance.toFixed(3));
 
                     this.byId("btnEditMrpDtl").setVisible(true);
                     this.byId("btnSaveMrpDtl").setVisible(false);
                     this.byId("btnCancelMrpDtl").setVisible(false);
-                    this.byId("btnRefreshMrpDtl").setVisible(true);
+                    // this.byId("btnRefreshMrpDtl").setVisible(true);
                     this.byId("btnColPropMrpDtl").setVisible(true);
                     this.byId("btnTabLayoutMrpDtl").setVisible(true);
                     this.setRowReadMode("mrpDtl");
@@ -1106,7 +1235,7 @@ sap.ui.define([
                             _this.byId("btnEditMrpDtl").setVisible(true);
                             _this.byId("btnSaveMrpDtl").setVisible(false);
                             _this.byId("btnCancelMrpDtl").setVisible(false);
-                            _this.byId("btnRefreshMrpDtl").setVisible(true);
+                            // _this.byId("btnRefreshMrpDtl").setVisible(true);
                             _this.byId("btnColPropMrpDtl").setVisible(true);
                             _this.byId("btnTabLayoutMrpDtl").setVisible(true);
 
@@ -1300,7 +1429,7 @@ sap.ui.define([
             onKeyUpMrpHdr(oEvent) {
                 if ((oEvent.key === "ArrowUp" || oEvent.key === "ArrowDown") && oEvent.srcControl.sParentAggregationName === "rows") {
                     var sRowPath = this.byId(oEvent.srcControl.sId).oBindingContexts["mrpHdr"].sPath;
-                    var oRow = this.getView().getModel("mrpHdr").getProperty(sRowPath);
+                    var c = this.getView().getModel("mrpHdr").getProperty(sRowPath);
                     this.getView().getModel("ui").setProperty("/activeGmc", oRow.GMC);
                     this.getView().getModel("ui").setProperty("/activePlantCd", oRow.PLANTCD);
                     this.getView().getModel("ui").setProperty("/activeMatNo", oRow.MATNO);
@@ -1400,6 +1529,9 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "MATGRP"});
                 oDDTextParam.push({CODE: "CUSTGRP"});
 
+                // Label
+                oDDTextParam.push({CODE: "ROWS"});
+
                 // Button
                 oDDTextParam.push({CODE: "RESERVE"});
                 oDDTextParam.push({CODE: "RESET"});
@@ -1422,6 +1554,9 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "INFO_SEL_ONE_COL"});
                 oDDTextParam.push({CODE: "INFO_LAYOUT_SAVE"});
                 oDDTextParam.push({CODE: "INFO_NO_DATA_EXEC"});
+                oDDTextParam.push({CODE: "INFO_EXECUTE_SUCCESS"});
+                oDDTextParam.push({CODE: "INFO_EXECUTE_FAIL"});
+                oDDTextParam.push({CODE: "CONFIRM_PROCEED_EXECUTE"});
                 
                 oModel.create("/CaptionMsgSet", { CaptionMsgItems: oDDTextParam  }, {
                     method: "POST",
