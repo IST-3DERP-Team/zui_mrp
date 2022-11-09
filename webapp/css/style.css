@@ -8,3 +8,7 @@ panel {
 .sapUiTableExt>.sapMTB{
     background: white !important;
 }
+
+.activeRow {
+    background-color: #e1ebf3 !important;
+}

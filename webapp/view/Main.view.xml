@@ -55,8 +55,15 @@
             enableColumnFreeze="true"
             enableCellFilter="true"
             selectionMode="MultiToggle"
-            cellClick="onCellClickMrpHr"
+            firstVisibleRowChanged="onFirstVisibleRowChanged"
+            cellClick="onCellClickMrpHdr"
             sort="onSorted"
+            filter="onFilter"
+            columnFreeze="onColumnUpdated"
+            columnMove="onColumnUpdated"
+            columnResize="onColumnUpdated"
+            columnSelect="onColumnUpdated"
+            columnVisibility="onColumnUpdated"
             rowSelectionChange="onRowSelectionChangeMrpHdr">
             <uiT:extension>
                 <Toolbar>
@@ -115,8 +122,15 @@
             enableCellFilter="true"
             selectionMode="Single"
             selectionBehavior="RowOnly"
-            cellClick="onCellClickMrpDtl"
+            firstVisibleRowChanged="onFirstVisibleRowChanged"
+            cellClick="onCellClick"
             sort="onSorted"
+            filter="onFilter"
+            columnFreeze="onColumnUpdated"
+            columnMove="onColumnUpdated"
+            columnResize="onColumnUpdated"
+            columnSelect="onColumnUpdated"
+            columnVisibility="onColumnUpdated"
             rowSelectionChange="onRowSelectionChangeMrpDtl">
             <uiT:extension>
                 <Toolbar>
