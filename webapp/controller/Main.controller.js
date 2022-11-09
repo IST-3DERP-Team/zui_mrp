@@ -56,11 +56,19 @@ sap.ui.define([
                 this._oDataBeforeChange = {};
                 this._aInvalidValueState = [];
 
+                // Fire event when browser or tab is closed
                 window.addEventListener('beforeunload', function (e) {
                     _this.onExit();
                     // e.preventDefault();
                     // e.returnValue = '';
                 });
+
+                // Fire when browser address bar is changed
+                window.onhashchange = function(e) {
+                    //_this.onExit();
+                    // alert("onhashchange")
+                    // e.preventDefault();
+                };
             },
 
             onExit: function() {
@@ -127,7 +135,7 @@ sap.ui.define([
 
                 oModel.read(oEntitySet, {
                     success: function (data, response) {
-                        //console.log("getSbu", data);
+                        console.log("getSbu", data);
                         
                         if (data.results.length > 0) {
                             // Temporary set default sbu to VER
@@ -165,6 +173,7 @@ sap.ui.define([
                 if (oEvent) sFilterGlobal = oEvent.getSource()._oBasicSearchField.mProperties.value;
                 
                 this.getMrpHdr(aFilters, sFilterGlobal);
+                this.getProcurePlant();
 
                 this.byId("btnReserveMrpHdr").setEnabled(true);
                 this.byId("btnResetMrpHdr").setEnabled(true);
@@ -193,11 +202,16 @@ sap.ui.define([
                                 }
                             });
 
+                            var aFilterTab = [];
+                            if (_this.getView().byId("mrpHdrTab").getBinding("rows")) {
+                                aFilterTab = _this.getView().byId("mrpHdrTab").getBinding("rows").aFilters;
+                            }
+
                             var oJSONModel = new sap.ui.model.json.JSONModel();
                             oJSONModel.setData(data);
                             _this.getView().setModel(oJSONModel, "mrpHdr");
 
-                            _this.onFilterBySmart(pFilters, pFilterGlobal);
+                            _this.onFilterBySmart(pFilters, pFilterGlobal, aFilterTab);
 
                             _this.getView().getModel("ui").setProperty("/activeTransNo", data.results[0].TRANSNO);
                             _this.getView().getModel("ui").setProperty("/activeTransItm", data.results[0].TRANSITM);
@@ -214,6 +228,26 @@ sap.ui.define([
                     error: function (err) { 
                         console.log("error", err)
                         _this.closeLoadingDialog();
+                    }
+                })
+            },
+
+            getProcurePlant() {
+                var oModel = this.getOwnerComponent().getModel();
+                var sFilter = "SBU eq '" + this.getView().getModel("ui").getData().activeSbu + "'";;
+
+                oModel.read('/MRPProcurePlantSet', {
+                    urlParameters: {
+                        "$filter": sFilter
+                    },
+                    success: function (data, response) {
+                        console.log("MRPProcurePlantSet", data)
+                        if (data.results.length > 0) {
+                            _this.getView().setModel(new JSONModel(data), "procurePlant");
+                        }
+                    },
+                    error: function (err) { 
+                        console.log("error", err)
                     }
                 })
             },
@@ -248,7 +282,7 @@ sap.ui.define([
                 // })
             },
 
-            onFilterBySmart(pFilters, pFilterGlobal) {
+            onFilterBySmart(pFilters, pFilterGlobal, pFilterTab) {
                 var oFilter = null;
                 var aFilter = [];
                 var aFilterGrp = [];
@@ -294,6 +328,15 @@ sap.ui.define([
                 oFilter = new Filter(aFilterGrp, true);
 
                 this.byId("mrpHdrTab").getBinding("rows").filter(oFilter, "Application");
+
+                
+                if (pFilterTab.length > 0) {
+                    pFilterTab.forEach(item => {
+                        var iColIdx = _this._aColumns["mrpHdr"].findIndex(x => x.name == item.sPath);
+                        _this.getView().byId("mrpHdrTab").filter(_this.getView().byId("mrpHdrTab").getColumns()[iColIdx], 
+                            item.oValue1);
+                    });
+                }
             },
 
             onFilterByCol() {
@@ -779,14 +822,16 @@ sap.ui.define([
                                         "PurGroup": oMrpHdr.PURCHGRP,
                                         "ShortText": oMrpHdr.GMCDESCEN.substr(0, 40),
                                         "Material": oMrpHdr.MATNO,
-                                        "Plant": oMrpHdr.PLANTCD,
+                                        "Plant": (_this.getView().getModel("procurePlant").getData().results.length > 0 ? 
+                                            _this.getView().getModel("procurePlant").getData().results[0].PLANTCD : ""),
                                         "MatGrp": oMrpHdr.MATGRP,
                                         "Quantity": oMrpHdr.FORPR,
                                         "Unit": oMrpHdr.BASEUOM,
                                         "Batch": oMrpHdr.IONO,
                                         "FixedVend": oMrpHdr.VENDORCD,
                                         "PurchOrg": oMrpHdr.PURCHORG,
-                                        "ProcuringPlant": oMrpHdr.PLANTCD,
+                                        "ProcuringPlant": (_this.getView().getModel("procurePlant").getData().results.length > 0 ? 
+                                            _this.getView().getModel("procurePlant").getData().results[0].PLANTCD : ""),
                                         "Currency": oMrpHdr.CURRENCYCD,
                                         "PoPrice": oMrpHdr.UNITPRICE,
                                         "Salesgrp": oMrpHdr.SALESGRP,
@@ -823,11 +868,11 @@ sap.ui.define([
                                         oParam["N_IOMrp_Exp_Prtab"] = [];
                                         oParam["N_IOMrp_Exp_Retmsg"] = [];
 
-                                        console.log("onExecuteMrpHdr", oParam)
+                                        console.log("onExecuteMrpHdr param", oParam)
                                         oModel.create("/EMrtabSet", oParam, {
                                             method: "POST",
                                             success: function(oResult, oResponse) {
-                                                console.log(oResult);
+                                                console.log("onExecuteMrpHdr", oResult);
                                                 MessageBox.information(_oCaption.INFO_EXECUTE_SUCCESS);
 
                                                 _this.getView().getModel("mrpDtl").setProperty("/results", []);
