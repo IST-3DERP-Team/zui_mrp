@@ -99,6 +99,10 @@ sap.ui.define([
                 this.byId("btnColPropMrpDtl").setEnabled(false);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(false);
 
+                this.getView().setModel(new JSONModel({
+                    results:[]
+                }), "mrpDtl");
+
                 this._tableRendered = "";
                 var oTableEventDelegate = {
                     onkeyup: function(oEvent){
@@ -908,6 +912,12 @@ sap.ui.define([
                                                     })
                                                 }
 
+                                                if (sMessage.length == 0) {
+                                                    oResult.N_IOMrp_Exp_Retmsg.results.forEach(item => {
+                                                        if (item.Message) sMessage += item.Message + "\n";
+                                                    })
+                                                }
+
                                                 //MessageBox.information(_oCaption.INFO_EXECUTE_SUCCESS);
                                                 MessageBox.information(sMessage);
 
@@ -1090,9 +1100,10 @@ sap.ui.define([
             },
 
             onEditMrpDtl() {
-                var oTable = this.getView().byId("mrpDtlTab");
+                var aRows = this.getView().getModel("mrpDtl").getData().results;
+                //var oTable = this.getView().byId("mrpDtlTab");
                 
-                if (oTable.getRows().length > 0) {
+                if (aRows.length > 0) {
                     this.byId("btnEditMrpDtl").setVisible(false);
                     this.byId("btnSaveMrpDtl").setVisible(true);
                     this.byId("btnCancelMrpDtl").setVisible(true);
