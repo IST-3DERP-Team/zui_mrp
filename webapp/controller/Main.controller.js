@@ -891,11 +891,11 @@ sap.ui.define([
                                                 var sMessage = "";
 
                                                 oResult.N_IOMrp_Exp_Mrtab.results.forEach(item => {
-                                                    if (item.Rsvno) aMRCreated.push(item.Rsvno);
+                                                    if (item.Rsvno && !aMRCreated.includes(item.Rsvno)) aMRCreated.push(item.Rsvno);
                                                 })
 
                                                 oResult.N_IOMrp_Exp_Prtab.results.forEach(item => {
-                                                    if (item.PreqNo) aPRCreated.push(item.PreqNo);
+                                                    if (item.PreqNo && !aPRCreated.includes(item.PreqNo)) aPRCreated.push(item.PreqNo);
                                                 })
 
                                                 if (aMRCreated.length > 0) {
