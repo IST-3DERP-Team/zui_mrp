@@ -211,7 +211,22 @@ sap.ui.define([
                             _this.getView().getModel("ui").setProperty("/activePlantCd", data.results[0].PLANTCD);
                             _this.getView().getModel("ui").setProperty("/activeMatNo", data.results[0].MATNO);
                             _this.getView().getModel("ui").setProperty("/activeHdrRowPath", "/results/0");
-                            _this.getView().getModel("ui").setProperty("/rowCountMrpHdr", data.results.length.toString());
+                            var iRowCount = _this.getView().byId("mrpHdrTab").getBinding("rows").aIndices.length;
+                            _this.getView().getModel("ui").setProperty("/rowCountMrpHdr", iRowCount.toString());
+
+                            _this.setRowReadMode("mrpHdr");
+                        } else {
+                            var oJSONModel = new sap.ui.model.json.JSONModel();
+                            oJSONModel.setData(data);
+                            _this.getView().setModel(oJSONModel, "mrpHdr");
+                            _this._tableRendered = "mrpHdrTab";
+
+                            _this.getView().getModel("ui").setProperty("/activeTransNo", "");
+                            _this.getView().getModel("ui").setProperty("/activeTransItm", "");
+                            _this.getView().getModel("ui").setProperty("/activePlantCd", "");
+                            _this.getView().getModel("ui").setProperty("/activeMatNo", "");
+                            _this.getView().getModel("ui").setProperty("/activeHdrRowPath", "/results/0");
+                            _this.getView().getModel("ui").setProperty("/rowCountMrpHdr", "0");
 
                             _this.setRowReadMode("mrpHdr");
                         }
