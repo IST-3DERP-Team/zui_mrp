@@ -710,12 +710,6 @@ sap.ui.define([
                     // this.getView().getModel("mrpHdr").setProperty("/results", aDataMrpHdr);
                     // oTable.clearSelection();
 
-                    // Set first selected row as active
-                    var sPlantCd = aDataMrpHdr[0].PLANTCD;
-                    var sMatNo = aDataMrpHdr[0].MATNO;
-                    var sTransNo = aDataMrpHdr[0].TRANSNO;
-                    var sTransItm = aDataMrpHdr[0].TRANSITM;
-
                     // this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
                     // this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
                     // this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
@@ -742,6 +736,12 @@ sap.ui.define([
                                 if (idx == aData.length - 1) {
                                     var aMrpDtl = {results:[]};
                                     var aReserveList = jQuery.extend(true, [], _aReserveList);
+
+                                    var sTransNo = _this.getView().getModel("ui").getProperty("/activeTransNo");
+                                    var sTransItm = _this.getView().getModel("ui").getProperty("/activeTransItm");
+                                    var oMrpHdr = aDataMrpHdr.filter(x => x.TRANSNO == sTransNo && x.TRANSITM == sTransItm)[0];
+                                    var sPlantCd = oMrpHdr.PLANTCD;
+                                    var sMatNo = oMrpHdr.MATNO;
 
                                     aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.MATNO == sMatNo));
                                     oJSONModel.setData(aMrpDtl);
@@ -807,7 +807,7 @@ sap.ui.define([
 
                                     var aForMr = _aForMrList.filter(x => x.TRANSNO == oMrpHdr.TRANSNO && x.TRANSITM == oMrpHdr.TRANSITM);
                                     if (aForMr.length > 0) {
-                                        aForMr.forEach(item => {
+                                        /*aForMr.forEach(item => {
                                             var oImBatchTab = {
                                                 "Transcheck": "TPCHK",
                                                 "Seqno": "1",
@@ -822,7 +822,7 @@ sap.ui.define([
                                             }
 
                                             aImBatchTab.push(oImBatchTab);
-                                        });
+                                        });*/
 
                                         aForMr.forEach(item => {
                                             var oForMr = {
@@ -835,7 +835,7 @@ sap.ui.define([
                                                 "Issuom": oMrpHdr.BASEUOM,
                                                 "Rcvplant": oMrpHdr.PLANTCD,
                                                 "Rcvmatno": oMrpHdr.MATNO,
-                                                "Rcvbatch": "",
+                                                "Rcvbatch": oMrpHdr.IONO,
                                                 "Rcvsloc": item.SLOC,
                                                 "Createdby": _startUpInfo.id,
                                                 "Transno": oMrpHdr.TRANSNO,
@@ -874,6 +874,70 @@ sap.ui.define([
                                 })
 
                                 var oParam = {};
+                                var oModel = _this.getOwnerComponent().getModel("ZGW_3DERP_RFC_SRV");
+
+                                oParam["N_IOMrp_Imp_Mrtab"] = aMrTab;
+                                oParam["N_IOMrp_Imp_Prtab"] = aPrTab;
+                                oParam["N_IOMrp_Exp_Mrtab"] = [];
+                                oParam["N_IOMrp_Exp_Prtab"] = [];
+                                oParam["N_IOMrp_Exp_Retmsg"] = [];
+
+                                console.log("onExecuteMrpHdr param", oParam)
+                                oModel.create("/EMrtabSet", oParam, {
+                                    method: "POST",
+                                    success: function(oResult, oResponse) {
+                                        console.log("onExecuteMrpHdr", oResult);
+                                        var aMRCreated = [];
+                                        var aPRCreated = [];
+                                        var sMessage = "";
+
+                                        oResult.N_IOMrp_Exp_Mrtab.results.forEach(item => {
+                                            if (item.Rsvno && !aMRCreated.includes(item.Rsvno)) aMRCreated.push(item.Rsvno);
+                                        })
+
+                                        oResult.N_IOMrp_Exp_Prtab.results.forEach(item => {
+                                            if (item.PreqNo && !aPRCreated.includes(item.PreqNo)) aPRCreated.push(item.PreqNo);
+                                        })
+
+                                        if (aMRCreated.length > 0) {
+                                            sMessage += "Below are successfully created MR: \n";
+                                            aMRCreated.forEach(item => {
+                                                sMessage += item + "\n";
+                                            })
+                                        }
+
+                                        if (aPRCreated.length > 0) {
+                                            sMessage += "Below are successfully created PR: \n";
+                                            aPRCreated.forEach(item => {
+                                                sMessage += item + "\n";
+                                            })
+                                        }
+
+                                        if (sMessage.length == 0) {
+                                            oResult.N_IOMrp_Exp_Retmsg.results.forEach(item => {
+                                                if (item.Message) sMessage += item.Message + "\n";
+                                            })
+                                        }
+
+                                        //MessageBox.information(_oCaption.INFO_EXECUTE_SUCCESS);
+                                        MessageBox.information(sMessage);
+
+                                        _this.getView().getModel("mrpDtl").setProperty("/results", []);
+                                        _this.onSearchMrpHdr();
+                                        _aReserveList = [];
+                                        _aForMrList = [];
+
+                                        _this.closeLoadingDialog();
+                                    },
+                                    error: function(err) {
+                                        MessageBox.error(_oCaption.INFO_EXECUTE_FAIL);
+                                        console.log("error", err);
+                                        _this.closeLoadingDialog();
+                                    }
+                                });
+                                
+                                /* Remove CreateBatchSeq 12/23/2022
+                                var oParam = {};
                                 var oParamSeq = {};
                                 var oModel = _this.getOwnerComponent().getModel("ZGW_3DERP_RFC_SRV");
 
@@ -881,11 +945,11 @@ sap.ui.define([
                                 oParamSeq["N_MatBatchTab"] = []
                                 oParamSeq["N_ExReturnTab"] = [];
 
-                                //console.log("CreateBatchSeq", oParamSeq)
+                                console.log("CreateBatchSeq param", oParamSeq)
                                 oModel.create("/CreateBatchSeqSet", oParamSeq, {
                                     method: "POST",
                                     success: function(oResult, oResponse) {
-                                        //console.log("CreateBatchSeqSet", oResult);
+                                        console.log("CreateBatchSeqSet", oResult);
                                         oResult["N_MatBatchTab"].results.forEach((itemBatch, itemIdx) => {
                                             aMrTab[itemIdx].Rcvbatch = itemBatch.Batch;
                                         })
@@ -955,6 +1019,7 @@ sap.ui.define([
                                         console.log("error", err);
                                     }
                                 });
+                                */
                             }
                         }
                     });
@@ -1330,7 +1395,7 @@ sap.ui.define([
                             dSumFormr += parseFloat(item.FORMR);
                         }
                     })
-
+                    
                     this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORMR", dSumFormr.toFixed(3));
 
                     // Update Mrp Header column For Pr
@@ -1347,7 +1412,6 @@ sap.ui.define([
                     this.byId("btnTabLayoutMrpDtl").setVisible(true);
                     this.setRowReadMode("mrpDtl");
                     this.byId("mrpHdrTab").setShowOverlay(false);
-
                 }  
             },
 
