@@ -296,27 +296,39 @@ sap.ui.define([
                 var aFilterGrp = [];
                 var aFilterCol = [];
 
-                pFilters[0].aFilters.forEach(x => {
-                    if (Object.keys(x).includes("aFilters")) {
-                        x.aFilters.forEach(y => {
-                            var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == y.sPath.toUpperCase())[0].name;
-                            aFilter.push(new Filter(sName, FilterOperator.EQ, y.oValue1));
-
+                if (pFilters[0].aFilters.filter(x => Object.keys(x).includes("aFilters") == true).length > 0) {
+                    pFilters[0].aFilters.forEach(x => {
+                        console.log("pFilters", pFilters[0])
+                        
+                        if (Object.keys(x).includes("aFilters")) {
+                            x.aFilters.forEach(y => {
+                                var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == y.sPath.toUpperCase())[0].name;
+                                aFilter.push(new Filter(sName, FilterOperator.EQ, y.oValue1));
+    
+                                //if (!aFilterCol.includes(sName)) aFilterCol.push(sName);
+                            });
+                            var oFilterGrp = new Filter(aFilter, false);
+                            aFilterGrp.push(oFilterGrp);
+                            aFilter = [];
+                        } else {
+                            var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == x.sPath.toUpperCase())[0].name;
+                            aFilter.push(new Filter(sName, FilterOperator.EQ, x.oValue1));
+                            var oFilterGrp = new Filter(aFilter, false);
+                            aFilterGrp.push(oFilterGrp);
+                            aFilter = [];
+    
                             //if (!aFilterCol.includes(sName)) aFilterCol.push(sName);
-                        });
-                        var oFilterGrp = new Filter(aFilter, false);
-                        aFilterGrp.push(oFilterGrp);
-                        aFilter = [];
-                    } else {
+                        }
+                    });
+                } else {
+                    pFilters[0].aFilters.forEach(x => {
                         var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == x.sPath.toUpperCase())[0].name;
                         aFilter.push(new Filter(sName, FilterOperator.EQ, x.oValue1));
-                        var oFilterGrp = new Filter(aFilter, false);
-                        aFilterGrp.push(oFilterGrp);
-                        aFilter = [];
-
-                        //if (!aFilterCol.includes(sName)) aFilterCol.push(sName);
-                    }
-                });
+                    });
+                    var oFilterGrp = new Filter(aFilter, false);
+                    aFilterGrp.push(oFilterGrp);
+                    aFilter = [];
+                }
 
                 if (pFilterGlobal) {
                     this._aFilterableColumns["mrpHdr"].forEach(item => {
