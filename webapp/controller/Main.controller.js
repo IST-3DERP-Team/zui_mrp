@@ -862,16 +862,20 @@ sap.ui.define([
                                         "PurGroup": oMrpHdr.PURCHGRP,
                                         "ShortText": oMrpHdr.GMCDESCEN.substr(0, 40),
                                         "Material": oMrpHdr.MATNO,
-                                        "Plant": (_this.getView().getModel("procurePlant").getData().results.length > 0 ? 
-                                            _this.getView().getModel("procurePlant").getData().results[0].PLANTCD : ""),
+                                        // "Plant": (_this.getView().getModel("procurePlant").getData().results.length > 0 ? 
+                                        //     _this.getView().getModel("procurePlant").getData().results[0].PLANTCD : ""),
+                                        "Plant": (oMrpHdr.PURPLANTHDR.length > 0 ? oMrpHdr.PURPLANTHDR :
+                                            _this.getView().getModel("procurePlant").getData().results[0].PLANTCD),
                                         "MatGrp": oMrpHdr.MATGRP,
                                         "Quantity": oMrpHdr.FORPR,
                                         "Unit": oMrpHdr.BASEUOM,
                                         "Batch": oMrpHdr.IONO,
                                         "FixedVend": oMrpHdr.VENDORCD,
                                         "PurchOrg": oMrpHdr.PURCHORG,
-                                        "ProcuringPlant": (_this.getView().getModel("procurePlant").getData().results.length > 0 ? 
-                                            _this.getView().getModel("procurePlant").getData().results[0].PLANTCD : ""),
+                                        // "ProcuringPlant": (_this.getView().getModel("procurePlant").getData().results.length > 0 ? 
+                                        //     _this.getView().getModel("procurePlant").getData().results[0].PLANTCD : ""),
+                                        "ProcuringPlant": (oMrpHdr.PURPLANTHDR.length > 0 ? oMrpHdr.PURPLANTHDR :
+                                            _this.getView().getModel("procurePlant").getData().results[0].PLANTCD),
                                         "Currency": oMrpHdr.CURRENCYCD,
                                         "PoPrice": oMrpHdr.UNITPRICE,
                                         "Salesgrp": oMrpHdr.SALESGRP,

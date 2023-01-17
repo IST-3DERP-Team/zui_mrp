@@ -26,6 +26,19 @@
                 <Property Name="Sbu" Type="Edm.String" Nullable="false" MaxLength="5" sap:unicode="false" sap:label="SBU" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="Plantcd" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
             </EntityType>
+            <EntityType Name="MRPUnlock" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="LOCKEDBY"/>
+                </Key>
+                <Property Name="LOCKEDBY" Type="Edm.String" Nullable="false" MaxLength="12" sap:unicode="false" sap:label="Locked by" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+            </EntityType>
+            <EntityType Name="MRPProcurePlant" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="PLANTCD"/>
+                </Key>
+                <Property Name="PLANTCD" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="SBU" Type="Edm.String" Nullable="false" MaxLength="5" sap:unicode="false" sap:label="SBU" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+            </EntityType>
             <EntityType Name="MRPHeader" sap:content-version="1">
                 <Key>
                     <PropertyRef Name="Transno"/>
@@ -64,6 +77,7 @@
                     <PropertyRef Name="TRANSITM"/>
                 </Key>
                 <Property Name="MATTYPE" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Material type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="PURPLANTHDR" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="PURCHORG" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Purchasing Org." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="PLANTCD" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false" sap:sortable="false"/>
                 <Property Name="IONO" Type="Edm.String" Nullable="false" MaxLength="8" sap:unicode="false" sap:label="IO No." sap:creatable="false" sap:updatable="false" sap:sortable="false"/>
@@ -148,15 +162,11 @@
                 </Key>
                 <Property Name="Kdgrp" Type="Edm.String" Nullable="false" MaxLength="2" sap:unicode="false" sap:label="Customer Group" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
             </EntityType>
-            <EntityType Name="MRPUnlock" sap:content-version="1">
-                <Key>
-                    <PropertyRef Name="LOCKEDBY"/>
-                </Key>
-                <Property Name="LOCKEDBY" Type="Edm.String" Nullable="false" MaxLength="12" sap:unicode="false" sap:label="Locked by" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
-            </EntityType>
             <EntityContainer Name="ZGW_3DERP_MRP_SRV_Entities" m:IsDefaultEntityContainer="true" sap:supported-formats="atom json xlsx">
                 <EntitySet Name="MRPDetailViewSet" EntityType="ZGW_3DERP_MRP_SRV.MRPDetailView" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
                 <EntitySet Name="SBUSet" EntityType="ZGW_3DERP_MRP_SRV.SBU" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
+                <EntitySet Name="MRPUnlockSet" EntityType="ZGW_3DERP_MRP_SRV.MRPUnlock" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
+                <EntitySet Name="MRPProcurePlantSet" EntityType="ZGW_3DERP_MRP_SRV.MRPProcurePlant" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
                 <EntitySet Name="MRPHeaderSet" EntityType="ZGW_3DERP_MRP_SRV.MRPHeader" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
                 <EntitySet Name="MRPHeaderViewSet" EntityType="ZGW_3DERP_MRP_SRV.MRPHeaderView" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
                 <EntitySet Name="MRPDetailSet" EntityType="ZGW_3DERP_MRP_SRV.MRPDetail" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
@@ -166,7 +176,6 @@
                 <EntitySet Name="MRPMatTypeSet" EntityType="ZGW_3DERP_MRP_SRV.MRPMatType" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
                 <EntitySet Name="MRPMatGrpSet" EntityType="ZGW_3DERP_MRP_SRV.MRPMatGrp" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
                 <EntitySet Name="MRPCustGrpSet" EntityType="ZGW_3DERP_MRP_SRV.MRPCustGrp" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
-                <EntitySet Name="MRPUnlockSet" EntityType="ZGW_3DERP_MRP_SRV.MRPUnlock" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:content-version="1"/>
             </EntityContainer>
             <atom:link rel="self" href="http://159.138.39.203:8000/sap/opu/odata/sap/ZGW_3DERP_MRP_SRV/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
             <atom:link rel="latest-version" href="http://159.138.39.203:8000/sap/opu/odata/sap/ZGW_3DERP_MRP_SRV/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
