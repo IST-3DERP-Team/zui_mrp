@@ -160,6 +160,9 @@ sap.ui.define([
             onSearchMrpHdr(oEvent) {
                 this.showLoadingDialog("Loading...");
 
+                _aReserveList = [];
+                _aForMrList = [];
+
                 var aFilters = this.getView().byId("sfbMRP").getFilters();
                 var sFilterGlobal = "";
                 if (oEvent) sFilterGlobal = oEvent.getSource()._oBasicSearchField.mProperties.value;
@@ -404,7 +407,7 @@ sap.ui.define([
                         // _this.getView().setModel(oJSONColumnsModel, "columns"); //set the view model
 
                         if (oData.results.length > 0) {
-                            // console.log(modCode)
+                            //console.log(modCode, oData.results)
                             if (modCode === 'MRPMOD') {
                                 // console.log(oData.results)
                                 var aColumns = _this.setTableColumns(oColumns["mrpHdr"], oData.results);                               
@@ -494,8 +497,8 @@ sap.ui.define([
                         showable: vShowable,
                         key: prop.Key === '' ? false : true,
                         maxLength: prop.Length,
-                        precision: prop.Decimal,
-                        scale: prop.Scale !== undefined ? prop.Scale : null
+                        precision: prop.Length, //prop.Decimal,
+                        scale: prop.Decimal //prop.Scale !== undefined ? prop.Scale : null
                     })
                 })
 
@@ -761,7 +764,7 @@ sap.ui.define([
                                     _this._tableRendered = "mrpDtlTab";
                                     _this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
 
-                                    if (data.results.length == 0) {
+                                    if (_aReserveList.length == 0) {
                                         MessageBox.information(_oCaption.INFO_NO_DATA_GENERATED);
                                     }
                                 }
@@ -1411,7 +1414,7 @@ sap.ui.define([
                             dSumFormr += parseFloat(item.FORMR);
                         }
                     })
-                    
+
                     this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORMR", dSumFormr.toFixed(3));
 
                     // Update Mrp Header column For Pr
