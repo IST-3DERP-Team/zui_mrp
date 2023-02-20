@@ -400,7 +400,7 @@ sap.ui.define([
                     type: modCode,
                     tabname: tabName
                 });
-                
+
                 oModel.read("/ColumnsSet", {
                     success: function (oData, oResponse) {
                         oJSONColumnsModel.setData(oData);
@@ -1702,7 +1702,7 @@ sap.ui.define([
                 var oTable = oEvent.getSource().oParent.oParent;
                 // var oTable = this.getView().byId("mainTab");
                 var oColumns = oTable.getColumns();
-                var vSBU = this.getView().getModel("ui").getData().sbu;
+                var vSBU = this.getView().getModel("ui").getData().activeSbu;
                 console.log(oColumns)
 
                 // return;
