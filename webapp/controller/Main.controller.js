@@ -403,6 +403,7 @@ sap.ui.define([
 
                 oModel.read("/ColumnsSet", {
                     success: function (oData, oResponse) {
+                        console.log("ColumnsSet", oData)
                         oJSONColumnsModel.setData(oData);
                         // _this.getView().setModel(oJSONColumnsModel, "columns"); //set the view model
 

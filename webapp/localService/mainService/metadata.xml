@@ -77,6 +77,8 @@
                     <PropertyRef Name="TRANSITM"/>
                 </Key>
                 <Property Name="MATTYPE" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Material type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="MOREQQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="MOREQQTY" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="MRPREQQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="Quantity" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="PURPLANTHDR" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="PURCHORG" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Purchasing Org." sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="PLANTCD" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false" sap:sortable="false"/>
@@ -88,7 +90,6 @@
                 <Property Name="ADDTLDESCEN" Type="Edm.String" Nullable="false" MaxLength="500" sap:unicode="false" sap:label="Addtl Desc (EN)" sap:creatable="false" sap:updatable="false" sap:sortable="false"/>
                 <Property Name="GMCDESCCN" Type="Edm.String" Nullable="false" MaxLength="500" sap:unicode="false" sap:label="GMC Desc (CN)" sap:creatable="false" sap:updatable="false" sap:sortable="false"/>
                 <Property Name="ADDTLDESCCN" Type="Edm.String" Nullable="false" MaxLength="500" sap:unicode="false" sap:label="Addtl Desc (CN)" sap:creatable="false" sap:updatable="false" sap:sortable="false"/>
-                <Property Name="REQQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="Required Qty" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="MRQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="MR Qty" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="PRQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="PR Qty" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="POQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="PO Qty" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
