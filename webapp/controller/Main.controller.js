@@ -1,5 +1,5 @@
 sap.ui.define([
-    "sap/ui/core/mvc/Controller",
+    "./BaseController",
     "sap/ui/model/json/JSONModel",
     "sap/m/MessageBox",
     "sap/ui/model/Filter",
@@ -14,7 +14,7 @@ sap.ui.define([
     /**
      * @param {typeof sap.ui.core.mvc.Controller} Controller
      */
-    function (Controller, JSONModel, MessageBox, Filter, FilterOperator, Sorter, Device, library, TablePersoController, MessageToast, SearchField) {
+    function (BaseController, JSONModel, MessageBox, Filter, FilterOperator, Sorter, Device, library, TablePersoController, MessageToast, SearchField) {
         "use strict";
 
         var _this;
@@ -23,36 +23,13 @@ sap.ui.define([
         var _aForMrList = [];
         var _oCaption = {};
 
-        // shortcut for sap.ui.table.SortOrder
-        var SortOrder = library.SortOrder;
-        var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({pattern : "MM/dd/yyyy" });
-
-        return Controller.extend("zuimrp.controller.Main", {
+        return BaseController.extend("zuimrp.controller.Main", {
             onInit: function () {
                 _this = this;
-                this.showLoadingDialog('Loading...');
 
-                var oModelStartUp= new sap.ui.model.json.JSONModel();
-                oModelStartUp.loadData("/sap/bc/ui2/start_up").then(() => {
-                    _startUpInfo = oModelStartUp.oData;
-                });
+                _this.getCaption();
 
-                this.initializeComponent();
-
-                this._oSortDialog = null;
-                this._oFilterDialog = null;
-                this._oViewSettingsDialog = {};
-
-                this._aEntitySet = {
-                    mrpHdr: "MRPHeaderSet", mrpDtl: "MRPDetailSet"
-                };
-
-                this._aColumns = {};
-                this._aSortableColumns = {};
-                this._aFilterableColumns = {};
-                
-                this._oDataBeforeChange = {};
-                this._aInvalidValueState = [];
+                _this.initializeComponent();
             },
 
             onExit() {
@@ -68,12 +45,41 @@ sap.ui.define([
             },
 
             initializeComponent() {
-                // Get Captions
-                this.getCaption();
+                this.getView().setModel(new JSONModel({
+                    sbu: "VER", // temporary Sbu
+                    rowCountMrpHdr: "0",
+                    rowCountMrpDtl: "0"
+                }), "ui");
+
+                var oModelStartUp= new sap.ui.model.json.JSONModel();
+                oModelStartUp.loadData("/sap/bc/ui2/start_up").then(() => {
+                    _startUpInfo = oModelStartUp.oData;
+                });
+
+                this.onInitBase(_this, _this.getView().getModel("ui").getData().sbu);
+                _this.showLoadingDialog("Loading...");
+
+                var aTableList = [];
+                aTableList.push({
+                    modCode: "MRPMOD",
+                    tblSrc: "ZDV_3DERP_MRPHDR",
+                    tblId: "mrpHdrTab",
+                    tblModel: "mrpHdr"
+                });
+
+                aTableList.push({
+                    modCode: "MRPDTLMOD",
+                    tblSrc: "ZDV_MRPDTL",
+                    tblId: "mrpDtlTab",
+                    tblModel: "mrpDtl"
+                });
+
+                _this.getColumns(aTableList);
+                
+                _this._oDataBeforeChange = {};
 
                 // Add header search field
                 var oSmartFilter = this.getView().byId("sfbMRP");
-
                 if (oSmartFilter) {
                     oSmartFilter.attachFilterChange(function(oEvent) {});
 
@@ -95,7 +101,6 @@ sap.ui.define([
                 this.byId("btnColPropMrpHdr").setEnabled(false);
                 this.byId("btnTabLayoutMrpHdr").setEnabled(false);
                 this.byId("btnEditMrpDtl").setEnabled(false);
-                // this.byId("btnRefreshMrpDtl").setEnabled(false);
                 this.byId("btnColPropMrpDtl").setEnabled(false);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(false);
 
@@ -115,6 +120,12 @@ sap.ui.define([
                 };
 
                 this.byId("mrpHdrTab").addEventDelegate(oTableEventDelegate);
+
+                _this.closeLoadingDialog();
+            },
+
+            onAfterTableRender(pTableId, pTableProps) {
+                //console.log("onAfterTableRendering", pTableId)
             },
 
             onSFBInitialise() {
@@ -136,18 +147,8 @@ sap.ui.define([
                             
                             if (sbu.toUpperCase() == "VER") {
                                 _this.getView().byId("filterPlant").setFilterType("single");
-                                //console.log("single", _this.getView().byId("filterPlant").getFilterType())
                             }
 
-                            var oJSONModel = new JSONModel();
-                            oJSONModel.setData({
-                                activeSbu: sbu,
-                                rowCountMrpHdr: "0",
-                                rowCountMrpDtl: "0"
-                            });
-                            _this.getView().setModel(oJSONModel, "ui");
-
-                            _this.getColumns();   
                             _this.closeLoadingDialog();                         
                         }
                     },
@@ -207,7 +208,7 @@ sap.ui.define([
                             _this.getView().setModel(oJSONModel, "mrpHdr");
                             _this._tableRendered = "mrpHdrTab";
 
-                            _this.onFilterBySmart(pFilters, pFilterGlobal, aFilterTab);
+                            _this.onFilterBySmart("mrpHdr", pFilters, pFilterGlobal, aFilterTab);
 
                             _this.getView().getModel("ui").setProperty("/activeTransNo", data.results[0].TRANSNO);
                             _this.getView().getModel("ui").setProperty("/activeTransItm", data.results[0].TRANSITM);
@@ -293,295 +294,6 @@ sap.ui.define([
                 // })
             },
 
-            onFilterBySmart(pFilters, pFilterGlobal, pFilterTab) {
-                var oFilter = null;
-                var aFilter = [];
-                var aFilterGrp = [];
-                var aFilterCol = [];
-
-                if (pFilters[0].aFilters.filter(x => Object.keys(x).includes("aFilters") == true).length > 0) {
-                    pFilters[0].aFilters.forEach(x => {
-                        console.log("pFilters", pFilters[0])
-                        
-                        if (Object.keys(x).includes("aFilters")) {
-                            x.aFilters.forEach(y => {
-                                var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == y.sPath.toUpperCase())[0].name;
-                                aFilter.push(new Filter(sName, FilterOperator.EQ, y.oValue1));
-    
-                                //if (!aFilterCol.includes(sName)) aFilterCol.push(sName);
-                            });
-                            var oFilterGrp = new Filter(aFilter, false);
-                            aFilterGrp.push(oFilterGrp);
-                            aFilter = [];
-                        } else {
-                            var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == x.sPath.toUpperCase())[0].name;
-                            aFilter.push(new Filter(sName, FilterOperator.EQ, x.oValue1));
-                            var oFilterGrp = new Filter(aFilter, false);
-                            aFilterGrp.push(oFilterGrp);
-                            aFilter = [];
-    
-                            //if (!aFilterCol.includes(sName)) aFilterCol.push(sName);
-                        }
-                    });
-                } else {
-                    pFilters[0].aFilters.forEach(x => {
-                        var sName = this._aColumns["mrpHdr"].filter(item => item.name.toUpperCase() == x.sPath.toUpperCase())[0].name;
-                        aFilter.push(new Filter(sName, FilterOperator.EQ, x.oValue1));
-                    });
-                    var oFilterGrp = new Filter(aFilter, false);
-                    aFilterGrp.push(oFilterGrp);
-                    aFilter = [];
-                }
-
-                if (pFilterGlobal) {
-                    this._aFilterableColumns["mrpHdr"].forEach(item => {
-                        var sDataType = this._aColumns["mrpHdr"].filter(col => col.name === item.name)[0].type;
-                        if (sDataType === "Edm.Boolean") aFilter.push(new Filter(item.name, FilterOperator.EQ, pFilterGlobal));
-                        else aFilter.push(new Filter(item.name, FilterOperator.Contains, pFilterGlobal));
-                    })
-
-                    var oFilterGrp = new Filter(aFilter, false);
-                    aFilterGrp.push(oFilterGrp);
-                    aFilter = [];
-                }
-                
-                // if (aFilterGrp.length == 0) oFilter = new Filter(aFilter, false);
-                // else oFilter = new Filter(aFilterGrp, true);
-
-                oFilter = new Filter(aFilterGrp, true);
-
-                this.byId("mrpHdrTab").getBinding("rows").filter(oFilter, "Application");
-
-                
-                if (pFilterTab.length > 0) {
-                    pFilterTab.forEach(item => {
-                        var iColIdx = _this._aColumns["mrpHdr"].findIndex(x => x.name == item.sPath);
-                        _this.getView().byId("mrpHdrTab").filter(_this.getView().byId("mrpHdrTab").getColumns()[iColIdx], 
-                            item.oValue1);
-                    });
-                }
-            },
-
-            onFilterByCol() {
-
-            },
-
-            getColumns: async function() {
-                var oModelColumns = new JSONModel();
-                var sPath = jQuery.sap.getModulePath("zuimrp", "/model/columns.json")
-                await oModelColumns.loadData(sPath);
-
-                var oColumns = oModelColumns.getData();
-                var oModel = this.getOwnerComponent().getModel();
-
-                oModel.metadataLoaded().then(() => {
-                    this.getDynamicColumns(oColumns, "MRPMOD", "ZDV_3DERP_MRPHDR");
-                    
-                    setTimeout(() => {
-                        this.getDynamicColumns(oColumns, "MRPDTLMOD", "ZDV_MRPDTL");
-                    }, 100);
-                })
-            },
-
-            getDynamicColumns(arg1, arg2, arg3) {
-                var oColumns = arg1;
-                var modCode = arg2;
-                var tabName = arg3;
-
-                //get dynamic columns based on saved layout or ZERP_CHECK
-                var oJSONColumnsModel = new JSONModel();
-                // this.oJSONModel = new JSONModel();
-                var vSBU = this.getView().getModel("ui").getData().activeSbu;
-
-                var oModel = this.getOwnerComponent().getModel("ZGW_3DERP_COMMON_SRV");
-                // console.log(oModel)
-                oModel.setHeaders({
-                    sbu: vSBU,
-                    type: modCode,
-                    tabname: tabName
-                });
-
-                oModel.read("/ColumnsSet", {
-                    success: function (oData, oResponse) {
-                        //console.log("ColumnsSet", oData)
-                        oJSONColumnsModel.setData(oData);
-                        // _this.getView().setModel(oJSONColumnsModel, "columns"); //set the view model
-
-                        if (oData.results.length > 0) {
-                            //console.log(modCode, oData.results)
-                            if (modCode === 'MRPMOD') {
-                                // console.log(oData.results)
-                                var aColumns = _this.setTableColumns(oColumns["mrpHdr"], oData.results);                               
-                                // console.log(aColumns);
-                                _this._aColumns["mrpHdr"] = aColumns["columns"];
-                                _this._aSortableColumns["mrpHdr"] = aColumns["sortableColumns"];
-                                _this._aFilterableColumns["mrpHdr"] = aColumns["filterableColumns"]; 
-                                _this.addColumns(_this.byId("mrpHdrTab"), aColumns["columns"], "mrpHdr");
-                            }
-                            else if (modCode === 'MRPDTLMOD') {
-                                var aColumns = _this.setTableColumns(oColumns["mrpDtl"], oData.results);
-                                // console.log("aColumns", aColumns);
-                                _this._aColumns["mrpDtl"] = aColumns["columns"];
-                                _this._aSortableColumns["mrpDtl"] = aColumns["sortableColumns"];
-                                _this._aFilterableColumns["mrpDtl"] = aColumns["filterableColumns"];
-                                _this.addColumns(_this.byId("mrpDtlTab"), aColumns["columns"], "mrpDtl");
-                            }
-                        }
-                    },
-                    error: function (err) {
-                        _this.closeLoadingDialog();
-                    }
-                });
-            },
-
-            setTableColumns: function(arg1, arg2) {
-                var oColumn = arg1;
-                var oMetadata = arg2;
-                
-                var aSortableColumns = [];
-                var aFilterableColumns = [];
-                var aColumns = [];
-
-                oMetadata.forEach((prop, idx) => {
-                    var vCreatable = prop.Creatable;
-                    var vUpdatable = prop.Editable;
-                    var vSortable = true;
-                    var vSorted = prop.Sorted;
-                    var vSortOrder = prop.SortOrder;
-                    var vFilterable = true;
-                    var vName = prop.ColumnLabel;
-                    var oColumnLocalProp = oColumn.filter(col => col.name.toUpperCase() === prop.ColumnName);
-                    var vShowable = true;
-                    var vOrder = prop.Order;
-
-                    // console.log(prop)
-                    if (vShowable) {
-                        //sortable
-                        if (vSortable) {
-                            aSortableColumns.push({
-                                name: prop.ColumnName, 
-                                label: vName, 
-                                position: +vOrder, 
-                                sorted: vSorted,
-                                sortOrder: vSortOrder
-                            });
-                        }
-
-                        //filterable
-                        if (vFilterable) {
-                            aFilterableColumns.push({
-                                name: prop.ColumnName, 
-                                label: vName, 
-                                position: +vOrder,
-                                value: "",
-                                connector: "Contains"
-                            });
-                        }
-                    }
-
-                    //columns
-                    aColumns.push({
-                        name: prop.ColumnName, 
-                        label: vName, 
-                        position: +vOrder,
-                        type: prop.DataType,
-                        creatable: vCreatable,
-                        updatable: vUpdatable,
-                        sortable: vSortable,
-                        filterable: vFilterable,
-                        visible: prop.Visible,
-                        required: prop.Mandatory,
-                        width: prop.ColumnWidth + 'px',
-                        sortIndicator: vSortOrder === '' ? "None" : vSortOrder,
-                        hideOnChange: false,
-                        valueHelp: oColumnLocalProp.length === 0 ? {"show": false} : oColumnLocalProp[0].valueHelp,
-                        showable: vShowable,
-                        key: prop.Key === '' ? false : true,
-                        maxLength: prop.Length,
-                        precision: prop.Length, //prop.Decimal,
-                        scale: prop.Decimal //prop.Scale !== undefined ? prop.Scale : null
-                    })
-                })
-
-                aSortableColumns.sort((a,b) => (a.position > b.position ? 1 : -1));
-                this.createViewSettingsDialog("sort", 
-                    new JSONModel({
-                        items: aSortableColumns,
-                        rowCount: aSortableColumns.length,
-                        activeRow: 0,
-                        table: ""
-                    })
-                );
-
-                aFilterableColumns.sort((a,b) => (a.position > b.position ? 1 : -1));
-                this.createViewSettingsDialog("filter", 
-                    new JSONModel({
-                        items: aFilterableColumns,
-                        rowCount: aFilterableColumns.length,
-                        table: ""
-                    })
-                );
-
-                aColumns.sort((a,b) => (a.position > b.position ? 1 : -1));
-                var aColumnProp = aColumns.filter(item => item.showable === true);
-
-                this.createViewSettingsDialog("column", 
-                    new JSONModel({
-                        items: aColumnProp,
-                        rowCount: aColumnProp.length,
-                        table: ""
-                    })
-                );
-
-                
-                return { columns: aColumns, sortableColumns: aSortableColumns, filterableColumns: aFilterableColumns };
-            },
-
-            addColumns(table, columns, model) {
-                var aColumns = columns.filter(item => item.showable === true)
-                aColumns.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-                aColumns.forEach(col => {
-                    // console.log(col)
-                    if (col.type === "STRING" || col.type === "DATETIME") {
-                        table.addColumn(new sap.ui.table.Column({
-                            id: model + "Col" + col.name,
-                            // id: col.name,
-                            width: col.width,
-                            sortProperty: col.name,
-                            filterProperty: col.name,
-                            label: new sap.m.Text({text: col.label}),
-                            template: new sap.m.Text({text: "{" + model + ">" + col.name + "}"}),
-                            visible: col.visible
-                        }));
-                    }
-                    else if (col.type === "NUMBER") {
-                        table.addColumn(new sap.ui.table.Column({
-                            id: model + "Col" + col.name,
-                            width: col.width,
-                            hAlign: "End",
-                            sortProperty: col.name,
-                            filterProperty: col.name,
-                            label: new sap.m.Text({text: col.label}),
-                            template: new sap.m.Text({text: "{" + model + ">" + col.name + "}"}),
-                            visible: col.visible
-                        }));
-                    }
-                    else if (col.type === "BOOLEAN" ) {
-                        table.addColumn(new sap.ui.table.Column({
-                            id: model + "Col" + col.name,
-                            width: col.width,
-                            hAlign: "Center",
-                            sortProperty: col.name,
-                            filterProperty: col.name,                            
-                            label: new sap.m.Text({text: col.label}),
-                            template: new sap.m.CheckBox({selected: "{" + model + ">" + col.name + "}", editable: false}),
-                            visible: col.visible
-                        }));
-                    }
-                })
-            },
-
             onRowSelectionChangeMrpHdr: function(oEvent) {
                 var sPath = oEvent.getParameters().rowContext.sPath;
 
@@ -660,29 +372,6 @@ sap.ui.define([
                 oJSONModel.setData(aMrpDtl);
                 this.getView().setModel(oJSONModel, "mrpDtl");
                 this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
-            },
-
-            createViewSettingsDialog: function (arg1, arg2) {
-                var sDialogFragmentName = null;
-
-                if (arg1 === "sort") sDialogFragmentName = "zuimrp.view.fragments.SortDialog";
-                else if (arg1 === "filter") sDialogFragmentName = "zuimrp.view.fragments.FilterDialog";
-                else if (arg1 === "column") sDialogFragmentName = "zuimrp.view.fragments.ColumnDialog";
-
-                var oViewSettingsDialog = this._oViewSettingsDialog[sDialogFragmentName];
-
-                if (!oViewSettingsDialog) {
-                    oViewSettingsDialog = sap.ui.xmlfragment(sDialogFragmentName, this);
-                    
-                    if (Device.system.desktop) {
-                        oViewSettingsDialog.addStyleClass("sapUiSizeCompact");
-                    }
-
-                    oViewSettingsDialog.setModel(arg2);
-
-                    this._oViewSettingsDialog[sDialogFragmentName] = oViewSettingsDialog;
-                    this.getView().addDependent(oViewSettingsDialog);
-                }
             },
             
             getConnector(args) {
@@ -1054,143 +743,6 @@ sap.ui.define([
                 }
             },
 
-            setRowReadMode(arg) {
-                var oTable = this.byId(arg + "Tab");
-                oTable.getColumns().forEach((col, idx) => {                    
-                    this._aColumns[arg].filter(item => item.label === col.getLabel().getText())
-                        .forEach(ci => {
-                            if (ci.type === "STRING" || ci.type === "NUMBER") {
-                                col.setTemplate(new sap.m.Text({
-                                    text: "{" + arg + ">" + ci.name + "}",
-                                    wrapping: false,
-                                    tooltip: "{" + arg + ">" + ci.name + "}"
-                                }));
-                            }
-                            else if (ci.type === "BOOLEAN") {
-                                col.setTemplate(new sap.m.CheckBox({selected: "{" + arg + ">" + ci.name + "}", editable: false}));
-                            }
-
-                            if (ci.required) {
-                                col.getLabel().removeStyleClass("requiredField");
-                            }
-                        })
-                })
-            },
-
-            setReqColHdrColor(arg) {
-                var oTable = this.byId(arg + "Tab");
-
-                oTable.getColumns().forEach((col, idx) => {
-                    this._aColumns[arg].filter(item => item.label === col.getLabel().getText())
-                        .forEach(ci => {
-                            if (ci.required) {
-                                col.getLabel().removeStyleClass("requiredField");
-                            }
-                        })
-                })
-            },
-
-            resetVisibleCols(arg) {
-                var aData = this.getView().getModel(arg).getData().results;
-
-                this._oDataBeforeChange.results.forEach((item, idx) => {
-                    if (item.Deleted) {
-                        aData.splice(idx, 0, item)
-                    }
-                })
-
-                this.getView().getModel(arg).setProperty("/results", aData);
-            },
-
-            onColSortCellClick: function (oEvent) {
-                this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"].getModel().setProperty("/activeRow", (oEvent.getParameters().rowIndex));
-            },
-
-            onColSortSelectAll: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];               
-                oDialog.getContent()[0].addSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
-            },
-
-            onColSortDeSelectAll: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];               
-                oDialog.getContent()[0].removeSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
-            },
-
-            onColSortRowFirst: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
-                var iActiveRow = oDialog.getModel().getData().activeRow;
-
-                var oDialogData = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"].getModel().getData().items;
-                oDialogData.filter((item, index) => index === iActiveRow)
-                    .forEach(item => item.position = 0);
-                oDialogData.filter((item, index) => index !== iActiveRow)
-                    .forEach((item, index) => item.position = index + 1);
-                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-                oDialog.getModel().setProperty("/items", oDialogData);
-                oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
-            },
-
-            onColSortRowUp: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
-                var iActiveRow = oDialog.getModel().getData().activeRow;
-
-                var oDialogData = oDialog.getModel().getData().items;
-                oDialogData.filter((item, index) => index === iActiveRow).forEach(item => item.position = iActiveRow - 1);
-                oDialogData.filter((item, index) => index === iActiveRow - 1).forEach(item => item.position = item.position + 1);
-                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-                oDialog.getModel().setProperty("/items", oDialogData);
-                oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
-            },
-
-            onColSortRowDown: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
-                var iActiveRow = oDialog.getModel().getData().activeRow;
-
-                var oDialogData = oDialog.getModel().getData().items;
-                oDialogData.filter((item, index) => index === iActiveRow).forEach(item => item.position = iActiveRow + 1);
-                oDialogData.filter((item, index) => index === iActiveRow + 1).forEach(item => item.position = item.position - 1);
-                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-                oDialog.getModel().setProperty("/items", oDialogData);
-                oDialog.getModel().setProperty("/activeRow", iActiveRow + 1);
-            },
-
-            onColSortRowLast: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
-                var iActiveRow = oDialog.getModel().getData().activeRow;
-
-                var oDialogData = oDialog.getModel().getData().items;
-                oDialogData.filter((item, index) => index === iActiveRow)
-                    .forEach(item => item.position = oDialogData.length - 1);
-                    oDialogData.filter((item, index) => index !== iActiveRow)
-                    .forEach((item, index) => item.position = index);
-                    oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-                oDialog.getModel().setProperty("/items", oDialogData);
-                oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
-            },
-
-            onColPropSelectAll: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"];               
-                oDialog.getContent()[0].addSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
-            },
-
-            onColPropDeSelectAll: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"];               
-                oDialog.getContent()[0].removeSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
-            },
-
-            onSelectTab: function(oEvent) {
-                // var oSource = oEvent.getSource();
-                // console.log(oSource)
-                // console.log(oEvent.getSource().getItems())
-                // console.log(oEvent.getSource().getSelectedKey())
-                this._tableRendered = oEvent.getSource().getSelectedKey() + "Tab";
-                this.setActiveRowHighlight(oEvent.getSource().getSelectedKey());
-            },
-
             onAfterTableRendering: function(oEvent) {
                 console.log(this._tableRendered)
                 if (this._tableRendered !== "") {
@@ -1214,6 +766,10 @@ sap.ui.define([
                     // Disable header
                     this.byId("mrpHdrTab").setShowOverlay(true);
 
+                    // 
+                    ///var oSmartFilter = this.getView().byId("sfbMRP");
+                    this.getView().byId("sfbMRP").setShowFilterConfiguration(false);
+
                     this._oDataBeforeChange = jQuery.extend(true, {}, this.getView().getModel("mrpDtl").getData());
 
                     this.getView().getModel("mrpDtl").getData().results.forEach(item => item.FORMR = null);
@@ -1221,73 +777,6 @@ sap.ui.define([
                 } else {
                     MessageBox.warning(_oCaption.INFO_NO_DATA_EDIT);
                 }
-            },
-
-            setRowEditMode(arg) {
-                this.getView().getModel(arg).getData().results.forEach(item => item.Edited = false);
-
-                var oTable = this.byId(arg + "Tab");
-
-                oTable.getColumns().forEach((col, idx) => {
-                    this._aColumns[arg].filter(item => item.label === col.getLabel().getText())
-                        .forEach(ci => {
-                            if (!ci.hideOnChange && ci.updatable) {
-                                if (ci.type === "BOOLEAN") {
-                                    col.setTemplate(new sap.m.CheckBox({selected: "{" + arg + ">" + ci.name + "}", editable: true}));
-                                }
-                                else if (ci.valueHelp["show"]) {
-                                    col.setTemplate(new sap.m.Input({
-                                        // id: "ipt" + ci.name,
-                                        type: "Text",
-                                        value: "{" + arg + ">" + ci.name + "}",
-                                        maxLength: +ci.maxLength,
-                                        showValueHelp: true,
-                                        valueHelpRequest: this.handleValueHelp.bind(this),
-                                        showSuggestion: true,
-                                        maxSuggestionWidth: ci.valueHelp["suggestionItems"].additionalText !== undefined ? ci.valueHelp["suggestionItems"].maxSuggestionWidth : "1px",
-                                        suggestionItems: {
-                                            path: ci.valueHelp["items"].path, //ci.valueHelp.model + ">/items", //ci.valueHelp["suggestionItems"].path,
-                                            length: 1000,
-                                            template: new sap.ui.core.ListItem({
-                                                key: "{" + ci.valueHelp["items"].value + "}", //"{" + ci.valueHelp.model + ">" + ci.valueHelp["items"].value + "}",
-                                                text: "{" + ci.valueHelp["items"].value + "}", //"{" + ci.valueHelp.model + ">" + ci.valueHelp["items"].value + "}", //ci.valueHelp["suggestionItems"].text
-                                                additionalText: ci.valueHelp["suggestionItems"].additionalText !== undefined ? ci.valueHelp["suggestionItems"].additionalText : '',
-                                            }),
-                                            templateShareable: false
-                                        },
-                                        change: this.onValueHelpLiveInputChange.bind(this)
-                                    }));
-                                }
-                                else if (ci.type === "NUMBER") {
-                                    col.setTemplate(new sap.m.Input({
-                                        type: sap.m.InputType.Number,
-                                        textAlign: sap.ui.core.TextAlign.Right,
-                                        value: "{path:'" + arg + ">" + ci.name + "', type:'sap.ui.model.odata.type.Decimal', formatOptions:{ minFractionDigits:" + ci.scale + ", maxFractionDigits:" + ci.scale + " }, constraints:{ precision:" + ci.precision + ", scale:" + ci.scale + " }}",
-                                        liveChange: this.onNumberLiveChange.bind(this)
-                                    }));
-                                }
-                                else {
-                                    if (ci.maxLength !== null) {
-                                        col.setTemplate(new sap.m.Input({
-                                            value: "{" + arg + ">" + ci.name + "}",
-                                            maxLength: +ci.maxLength,
-                                            liveChange: this.onInputLiveChange.bind(this)
-                                        }));
-                                    }
-                                    else {
-                                        col.setTemplate(new sap.m.Input({
-                                            value: "{" + arg + ">" + ci.name + "}",
-                                            liveChange: this.onInputLiveChange.bind(this)
-                                        }));
-                                    }
-                                }                                
-                            }
-
-                            if (ci.required) {
-                                col.getLabel().addStyleClass("requiredField");
-                            }
-                        })
-                })
             },
 
             onInputLiveChange: function(oEvent) {
@@ -1299,9 +788,6 @@ sap.ui.define([
             },
 
             onNumberLiveChange: function(oEvent) {
-                // console.log(oEvent.getParameters())
-                // console.log(oEvent.getParameters().value.split("."))
-                // console.log(this.validationErrors)
                 if (this.validationErrors === undefined) this.validationErrors = [];
 
                 if (oEvent.getParameters().value.split(".").length > 1) {
@@ -1342,9 +828,11 @@ sap.ui.define([
                 var oModel = _this.getView().getModel(sModel).getProperty(sRowPath);
                 var iNewValue = parseInt(oEvent.getParameters().newValue);
 
+                var oDataUI = _this.getView().getModel("ui").getData();
                 var aRow = _this.getView().getModel(sModel).getProperty(sRowPath);
                 var aFormr = _aForMrList.filter(x => x.PLANTCD == aRow.PLANTCD && 
-                    x.MATNO == aRow.MATNO && x.SLOC == aRow.SLOC && x.BATCH == aRow.BATCH);
+                    x.MATNO == aRow.MATNO && x.SLOC == aRow.SLOC && x.BATCH == aRow.BATCH &&
+                    x.TRANSNO != oDataUI.activeTransNo && x.TRANSITM != oDataUI.activeTransItm);
 
                 var iSumFormr = 0.000;
                 if (aFormr.length) {
@@ -1358,11 +846,6 @@ sap.ui.define([
             },
 
             onSaveMrpDtl() {
-                if (this._aInvalidValueState.length > 0) {
-                    MessageBox.error(_oCaption.INFO_INVALID_SAVE);
-                    return;
-                }
-
                 var aEditedRows = this.getView().getModel("mrpDtl").getData().results.filter(item => item.Edited === true);
                 //console.log("aEditedRows", aEditedRows);
 
@@ -1375,6 +858,22 @@ sap.ui.define([
 
                 if (aEditedRows.filter(x => x.FORMR != 0).length == 0) {
                     MessageBox.warning(_oCaption.WARN_NO_DATA_MODIFIED);
+                    return;
+                }
+
+                var sRowPath = this.getView().getModel("ui").getProperty("/activeHdrRowPath");
+                var oDataHdr = this.getView().getModel("mrpHdr").getProperty(sRowPath);
+                var aRows = this.getView().getModel("mrpDtl").getData().results;
+                var dSumFormr = 0.0;
+
+                aRows.forEach(item => {
+                    if (item.FORMR && parseFloat(item.FORMR) > 0) {
+                        dSumFormr += parseFloat(item.FORMR);
+                    }
+                });
+
+                if (dSumFormr >  oDataHdr.BALANCE) {
+                    MessageBox.warning(_oCaption.WARN_TOTAL_FORMR_GREATER_REQQTY);
                     return;
                 }
 
@@ -1407,8 +906,8 @@ sap.ui.define([
                     })
 
                     // Update Mrp Header column For Mr
-                    var sRowPath = this.getView().getModel("ui").getProperty("/activeHdrRowPath");
-                    var dSumFormr = 0.0;
+                    sRowPath = this.getView().getModel("ui").getProperty("/activeHdrRowPath");
+                    dSumFormr = 0.0;
 
                     _aForMrList.forEach(item => {
                         if (item.TRANSNO == sTransNo && item.TRANSITM == sTransItm) {
@@ -1452,7 +951,6 @@ sap.ui.define([
                                         
                             _this.setRowReadMode("mrpDtl");
                             _this.getView().getModel("mrpDtl").setProperty("/", _this._oDataBeforeChange);
-                            _this._aInvalidValueState = [];
                             
                         }
                     }
@@ -1461,177 +959,6 @@ sap.ui.define([
 
             onRefreshMrpDtl() {
                 //this.onReserveMrpHdr()();
-            },
-            
-            onColumnProp: function(oEvent) {
-                var aColumns = [];
-                var oTable = oEvent.getSource().oParent.oParent;
-                
-                oTable.getColumns().forEach(col => {
-                    aColumns.push({
-                        name: col.getProperty("sortProperty"), 
-                        label: col.getLabel().getText(),
-                        position: col.getIndex(), 
-                        selected: col.getProperty("visible")
-                    });
-                })
-                
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"];
-                oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
-                oDialog.getModel().setProperty("/items", aColumns);
-                oDialog.getModel().setProperty("/rowCount", aColumns.length);
-                oDialog.open();
-            },
-
-            beforeOpenColProp: function(oEvent) {
-                oEvent.getSource().getModel().getData().items.forEach(item => {
-                    if (item.selected) {
-                        oEvent.getSource().getContent()[0].addSelectionInterval(item.position, item.position);
-                    }
-                    else {
-                        oEvent.getSource().getContent()[0].removeSelectionInterval(item.position, item.position);
-                    }
-                })
-            },            
-
-            onColumnPropConfirm: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"];
-                var oDialogTable = oDialog.getContent()[0];
-                var aSelRows = oDialogTable.getSelectedIndices();
-
-                if (aSelRows.length === 0) {
-                    MessageBox.information(_oCaption.INFO_SEL_ONE_COL);
-                }
-                else {
-                    oDialog.close();
-                    var sTable = oDialog.getModel().getData().table;
-                    var oTable = this.byId(sTable + "Tab");
-                    var oColumns = oTable.getColumns();
-
-                    oColumns.forEach(col => {
-                        if (aSelRows.filter(item => item === col.getIndex()).length === 0) {
-                            col.setVisible(false);
-                        }
-                        else col.setVisible(true);
-                    })
-                }
-            },
-
-            onColumnPropCancel: function(oEvent) {
-                this._oViewSettingsDialog["zuimrp.view.fragments.ColumnDialog"].close();
-            },
-
-            onSorted: function(oEvent) {
-                var sColumnName = oEvent.getParameters().column.getProperty("sortProperty");
-                var sSortOrder = oEvent.getParameters().sortOrder;
-                var bMultiSort = oEvent.getParameters().columnAdded;
-                var oSortData = this._aSortableColumns[oEvent.getSource().getBindingInfo("rows").model];
-
-                if (!bMultiSort) {
-                    oSortData.forEach(item => {
-                        if (item.name === sColumnName) {
-                            item.sorted = true;
-                            item.sortOrder = sSortOrder;
-                        }
-                        else {
-                            item.sorted = false;
-                        } 
-                    })
-                }
-            },
-
-            onColSort: function(oEvent) {
-                var oTable = oEvent.getSource().oParent.oParent;               
-                var aSortableColumns = this._aSortableColumns[oTable.getBindingInfo("rows").model];
-
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
-                oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
-                oDialog.getModel().setProperty("/items", aSortableColumns);
-                oDialog.getModel().setProperty("/rowCount", aSortableColumns.length);
-                oDialog.open();
-            },
-
-            beforeOpenColSort: function(oEvent) {
-                oEvent.getSource().getContent()[0].removeSelectionInterval(0, oEvent.getSource().getModel().getData().items.length - 1);
-                oEvent.getSource().getModel().getData().items.forEach(item => {
-                    if (item.sorted) {                       
-                        oEvent.getSource().getContent()[0].addSelectionInterval(item.position, item.position);
-                    }
-                })
-            },
-
-            onColSortConfirm: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"];
-                oDialog.close();
-
-                var sTable = oDialog.getModel().getData().table;
-                var oTable = this.byId(sTable + "Tab");
-                var oDialogData = oDialog.getModel().getData().items;
-                var oDialogTable = oDialog.getContent()[0];
-                var aSortSelRows = oDialogTable.getSelectedIndices();
-
-                oDialogData.forEach(item => item.sorted = false);
-
-                if (aSortSelRows.length > 0) {
-                    oDialogData.forEach((item, idx) => {
-                        if (aSortSelRows.filter(si => si === idx).length > 0) {
-                            var oColumn = oTable.getColumns().filter(col => col.getProperty("sortProperty") === item.name)[0];
-                            oTable.sort(oColumn, item.sortOrder === "Ascending" ? SortOrder.Ascending : SortOrder.Descending, true);
-                            item.sorted = true;
-                        }
-                    })
-                }
-
-                this._aSortableColumns[sTable] = oDialogData;
-            },
-
-            onColSortCancel: function(oEvent) {
-                this._oViewSettingsDialog["zuimrp.view.fragments.SortDialog"].close();
-            },
-
-            onColFilter: function(oEvent) {
-                var oTable = oEvent.getSource().oParent.oParent               
-                var aFilterableColumns = this._aFilterableColumns[oTable.getBindingInfo("rows").model];
-
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.FilterDialog"];
-                oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
-                oDialog.getModel().setProperty("/items", aFilterableColumns);
-                oDialog.getModel().setProperty("/rowCount", aFilterableColumns.length);
-                oDialog.open();
-            },
-
-            onColFilterConfirm: function(oEvent) {
-                var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.FilterDialog"];
-                oDialog.close();
-
-                var bFilter = false;
-                var aFilter = [];
-                var oFilter = null;
-                var sTable = oDialog.getModel().getData().table;
-                var oDialogData = oDialog.getModel().getData().items;
-
-                oDialogData.forEach(item => {
-                    if (item.value !== "") {
-                        bFilter = true;
-                        aFilter.push(new Filter(item.name, this.getConnector(item.connector), item.value))
-                    }
-                })
-                
-                if (bFilter) {
-                    oFilter = new Filter(aFilter, true);
-                    this.getView().byId("btnFilterGMC").addStyleClass("activeFiltering");
-                }
-                else {
-                    oFilter = "";
-                    this.getView().byId("btnFilterGMC").removeStyleClass("activeFiltering");
-                }
-
-                this.byId(sTable + "Tab").getBinding("rows").filter(oFilter, "Application");
-                this._aFilterableColumns[sTable] = oDialogData;
-            },
-
-            onColFilterCancel: function(oEvent) {
-                this._oViewSettingsDialog["zuimrp.view.fragments.FilterDialog"].close();
             },
 
             onKeyUp(oEvent) {
@@ -1679,21 +1006,6 @@ sap.ui.define([
                         }
                     }
                 }
-            },
-
-            showLoadingDialog(arg) {
-                if (!_this._LoadingDialog) {
-                    _this._LoadingDialog = sap.ui.xmlfragment("zuimrp.view.fragments.LoadingDialog", _this);
-                    _this.getView().addDependent(_this._LoadingDialog);
-                } 
-                // jQuery.sap.syncStyleClass("sapUiSizeCompact", this.getView(), this._LoadingDialog);
-                
-                _this._LoadingDialog.setTitle(arg);
-                _this._LoadingDialog.open();
-            },
-
-            closeLoadingDialog() {
-                _this._LoadingDialog.close();
             },
 
             onSaveTableLayout: function (oEvent) {
@@ -1755,107 +1067,6 @@ sap.ui.define([
                 });                
             },
 
-            onFirstVisibleRowChanged: function (oEvent) {
-                var oTable = oEvent.getSource();
-                var sModel;
-
-                if (oTable.getId().indexOf("mrpHdrTab") >= 0) {
-                    sModel = "mrpHdr";
-                }
-                else if (oTable.getId().indexOf("mrpDtlTab") >= 0) {
-                    sModel = "mrpDtl";
-                }
-
-                setTimeout(() => {
-                    var oData = oTable.getModel(sModel).getData().results;
-                    var iStartIndex = oTable.getBinding("rows").iLastStartIndex;
-                    var iLength = oTable.getBinding("rows").iLastLength + iStartIndex;
-
-                    if (oTable.getBinding("rows").aIndices.length > 0) {
-                        for (var i = iStartIndex; i < iLength; i++) {
-                            var iDataIndex = oTable.getBinding("rows").aIndices.filter((fItem, fIndex) => fIndex === i);
-    
-                            if (oData[iDataIndex].ACTIVE === "X") oTable.getRows()[iStartIndex === 0 ? i : i - iStartIndex].addStyleClass("activeRow");
-                            else oTable.getRows()[iStartIndex === 0 ? i : i - iStartIndex].removeStyleClass("activeRow");
-                        }
-                    }
-                    else {
-                        for (var i = iStartIndex; i < iLength; i++) {
-                            if (oData[i].ACTIVE === "X") oTable.getRows()[iStartIndex === 0 ? i : i - iStartIndex].addStyleClass("activeRow");
-                            else oTable.getRows()[iStartIndex === 0 ? i : i - iStartIndex].removeStyleClass("activeRow");
-                        }
-                    }
-                }, 1);
-            },
-
-            onFilter: function(oEvent) {
-                var oTable = oEvent.getSource();
-                var sModel;
-
-                if (oTable.getId().indexOf("mrpHdrTab") >= 0) {
-                    sModel = "mrpHdr";
-                }
-                else if (oTable.getId().indexOf("mrpDtlTab") >= 0) {
-                    sModel = "mrpDtl";
-                }
-
-                this.setActiveRowHighlight(sModel);
-            },
-
-            onColumnUpdated: function (oEvent) {
-                var oTable = oEvent.getSource();
-                var sModel;
-
-                if (oTable.getId().indexOf("mrpHdrTab") >= 0) {
-                    sModel = "mrpHdr";
-                }
-                else if (oTable.getId().indexOf("mrpDtlTab") >= 0) {
-                    sModel = "mrpDtl";
-                }
-
-                this.setActiveRowHighlight(sModel);
-            },
-
-            setActiveRowHighlight(arg) {
-                var oTable = this.byId(arg + "Tab");
-                
-                setTimeout(() => {
-                    var iActiveRowIndex = oTable.getModel(arg).getData().results.findIndex(item => item.ACTIVE === "X");
-
-                    oTable.getRows().forEach(row => {
-                        if (row.getBindingContext(arg) && +row.getBindingContext(arg).sPath.replace("/results/", "") === iActiveRowIndex) {
-                            row.addStyleClass("activeRow");
-                        }
-                        else row.removeStyleClass("activeRow");
-                    })
-                }, 1);
-            },
-
-            onCellClick: function(oEvent) {
-                if (oEvent.getParameters().rowBindingContext) {
-                    var oTable = oEvent.getSource(); //this.byId("ioMatListTab");
-                    var sRowPath = oEvent.getParameters().rowBindingContext.sPath;
-                    var sModel;
-
-                    if (oTable.getId().indexOf("mrpHdrTab") >= 0) {
-                        sModel = "mrpHdr";
-                    }
-                    else if (oTable.getId().indexOf("mrpDtlTab") >= 0) {
-                        sModel = "mrpDtl";
-                    }
-    
-                    oTable.getModel(sModel).getData().results.forEach(row => row.ACTIVE = "");
-                    oTable.getModel(sModel).setProperty(sRowPath + "/ACTIVE", "X"); 
-                    
-                    oTable.getRows().forEach(row => {
-                        if (row.getBindingContext(sModel) && row.getBindingContext(sModel).sPath.replace("/results/", "") === sRowPath.replace("/results/", "")) {
-                            row.addStyleClass("activeRow");
-                        }
-                        else row.removeStyleClass("activeRow");
-                    })
-                }
-            },
-
             getCaption() {
                 var oJSONModel = new JSONModel();
                 var oDDTextParam = [];
@@ -1899,6 +1110,7 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "INFO_EXECUTE_FAIL"});
                 oDDTextParam.push({CODE: "CONFIRM_PROCEED_EXECUTEMRP"});
                 oDDTextParam.push({CODE: "INFO_NO_DATA_GENERATED"});
+                oDDTextParam.push({CODE: "WARN_TOTAL_FORMR_GREATER_REQQTY"});
                 
                 oModel.create("/CaptionMsgSet", { CaptionMsgItems: oDDTextParam  }, {
                     method: "POST",
