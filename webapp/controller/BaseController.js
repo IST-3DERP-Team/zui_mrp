@@ -734,6 +734,24 @@ sap.ui.define([
             this._aFilterableColumns[sTable] = oDialogData;
         },
 
+        getConnector(args) {
+            var oConnector;
+
+            switch (args) {
+                case "EQ":
+                    oConnector = sap.ui.model.FilterOperator.EQ
+                    break;
+                  case "Contains":
+                    oConnector = sap.ui.model.FilterOperator.Contains
+                    break;
+                  default:
+                    // code block
+                    break;
+            }
+
+            return oConnector;
+        },
+
         onColFilterCancel: function(oEvent) {
             this._oViewSettingsDialog["zuimrp.view.fragments.dialog.FilterDialog"].close();
         },

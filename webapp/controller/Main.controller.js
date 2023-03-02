@@ -33,6 +33,11 @@ sap.ui.define([
             },
 
             onExit() {
+                console.log("onExit")
+                _this.unlockMrp();
+            },
+
+            unlockMrp() {
                 var oModel = new sap.ui.model.odata.ODataModel("/sap/opu/odata/sap/ZGW_3DERP_MRP_SRV/");
                 var oEntitySet = "/MRPUnlockSet";
 
@@ -185,6 +190,7 @@ sap.ui.define([
             getMrpHdr(pFilters, pFilterGlobal) {
                 var oModel = this.getOwnerComponent().getModel();
                 oModel.read('/MRPHeaderViewSet', {
+                    filters: pFilters,
                     success: function (data, response) {
                         console.log("MRPHeaderViewSet", data)
                         if (data.results.length > 0) {
@@ -372,24 +378,6 @@ sap.ui.define([
                 oJSONModel.setData(aMrpDtl);
                 this.getView().setModel(oJSONModel, "mrpDtl");
                 this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
-            },
-            
-            getConnector(args) {
-                var oConnector;
-
-                switch (args) {
-                    case "EQ":
-                        oConnector = sap.ui.model.FilterOperator.EQ
-                        break;
-                      case "Contains":
-                        oConnector = sap.ui.model.FilterOperator.Contains
-                        break;
-                      default:
-                        // code block
-                        break;
-                }
-
-                return oConnector;
             },
 
             onReserveMrpHdr() {
