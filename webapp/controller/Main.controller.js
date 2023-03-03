@@ -33,7 +33,6 @@ sap.ui.define([
             },
 
             onExit() {
-                console.log("onExit")
                 _this.unlockMrp();
             },
 
@@ -754,9 +753,11 @@ sap.ui.define([
                     // Disable header
                     this.byId("mrpHdrTab").setShowOverlay(true);
 
-                    // 
-                    ///var oSmartFilter = this.getView().byId("sfbMRP");
-                    this.getView().byId("sfbMRP").setShowFilterConfiguration(false);
+                    // Hide Smart Filter button
+                    var oSmartFilter = this.getView().byId("sfbMRP");
+                    oSmartFilter.setShowFilterConfiguration(false);
+                    oSmartFilter.setShowClearButton(false);
+                    oSmartFilter.setShowGoButton(false);
 
                     this._oDataBeforeChange = jQuery.extend(true, {}, this.getView().getModel("mrpDtl").getData());
 
@@ -814,7 +815,7 @@ sap.ui.define([
                 _this.getView().getModel(sModel).setProperty(sRowPath + '/Edited', true);
 
                 var oModel = _this.getView().getModel(sModel).getProperty(sRowPath);
-                var iNewValue = parseInt(oEvent.getParameters().newValue);
+                var iNewValue = parseFloat(oEvent.getParameters().newValue);
 
                 var oDataUI = _this.getView().getModel("ui").getData();
                 var aRow = _this.getView().getModel(sModel).getProperty(sRowPath);
@@ -919,6 +920,12 @@ sap.ui.define([
                     this.byId("btnTabLayoutMrpDtl").setVisible(true);
                     this.setRowReadMode("mrpDtl");
                     this.byId("mrpHdrTab").setShowOverlay(false);
+
+                    // Hide Smart Filter button
+                    var oSmartFilter = this.getView().byId("sfbMRP");
+                    oSmartFilter.setShowFilterConfiguration(true);
+                    oSmartFilter.setShowClearButton(true);
+                    oSmartFilter.setShowGoButton(true);
                 }  
             },
 
@@ -936,6 +943,12 @@ sap.ui.define([
 
                             // Disable header
                             _this.byId("mrpHdrTab").setShowOverlay(false);
+
+                            // Hide Smart Filter button
+                            var oSmartFilter = _this.getView().byId("sfbMRP");
+                            oSmartFilter.setShowFilterConfiguration(true);
+                            oSmartFilter.setShowClearButton(true);
+                            oSmartFilter.setShowGoButton(true);
                                         
                             _this.setRowReadMode("mrpDtl");
                             _this.getView().getModel("mrpDtl").setProperty("/", _this._oDataBeforeChange);
