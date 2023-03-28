@@ -355,9 +355,9 @@ sap.ui.define([
                 var aMrpDtl = {results: []};
                 var aReserveList = jQuery.extend(true, [], _aReserveList);
 
-                aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.MATNO == sMatNo));
+                aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.HDRMATNO == sMatNo));
                 aMrpDtl.results.forEach(item => {
-                    var aFormr = _aForMrList.filter(x => x.PLANTCD == item.PLANTCD && x.MATNO == item.MATNO && 
+                    var aFormr = _aForMrList.filter(x => x.PLANTCD == item.PLANTCD && x.MATNO == item.HDRMATNO && 
                         x.SLOC == item.SLOC && x.BATCH == item.BATCH);
                         
                     if (aFormr && aFormr.length > 0) {
