@@ -421,7 +421,7 @@ sap.ui.define([
                                 "$filter": "PLANTCD eq '" + item.PLANTCD + "' and MATNO eq '" + item.MATNO + "'"
                             },
                             success: function (data, response) {
-                                //console.log("MRPDetailViewSet", data);
+                                console.log("MRPDetailViewSet", data);
                                 
                                 _aReserveList.push(...data.results);
 
