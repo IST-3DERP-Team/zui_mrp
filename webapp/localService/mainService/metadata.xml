@@ -10,6 +10,8 @@
                     <PropertyRef Name="BATCH"/>
                 </Key>
                 <Property Name="MATTYPE" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Material type" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="OLDMATNO" Type="Edm.String" Nullable="false" MaxLength="40" sap:unicode="false" sap:label="Old matl number" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="HDRMATNO" Type="Edm.String" Nullable="false" MaxLength="40" sap:unicode="false" sap:label="Material" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="NETAVAILQTY" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="Net Avail Qty" sap:creatable="false" sap:updatable="false" sap:filterable="false"/>
                 <Property Name="PLANTCD" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Plant" sap:creatable="false" sap:updatable="false"/>
                 <Property Name="BALANCE" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3" sap:unicode="false" sap:label="Balance" sap:creatable="false" sap:updatable="false" sap:filterable="false"/>

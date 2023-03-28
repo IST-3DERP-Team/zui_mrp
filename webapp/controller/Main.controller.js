@@ -418,7 +418,7 @@ sap.ui.define([
                         //console.log("adata", item)
                         oModel.read(oEntitySet, {
                             urlParameters: {
-                                "$filter": "PLANTCD eq '" + item.PLANTCD + "' and MATNO eq '" + item.MATNO + "'"
+                                "$filter": "PLANTCD eq '" + item.PLANTCD + "' and HDRMATNO eq '" + item.MATNO + "'"
                             },
                             success: function (data, response) {
                                 console.log("MRPDetailViewSet", data);
@@ -435,7 +435,7 @@ sap.ui.define([
                                     var sPlantCd = oMrpHdr.PLANTCD;
                                     var sMatNo = oMrpHdr.MATNO;
 
-                                    aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.MATNO == sMatNo));
+                                    aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.HDRMATNO == sMatNo));
                                     oJSONModel.setData(aMrpDtl);
                                     _this.getView().setModel(oJSONModel, "mrpDtl");
                                     _this._tableRendered = "mrpDtlTab";
