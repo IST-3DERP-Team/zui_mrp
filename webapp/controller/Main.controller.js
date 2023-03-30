@@ -251,7 +251,7 @@ sap.ui.define([
 
             getProcurePlant() {
                 var oModel = this.getOwnerComponent().getModel();
-                var sFilter = "SBU eq '" + this.getView().getModel("ui").getData().activeSbu + "'";;
+                var sFilter = "SBU eq '" + this.getView().getModel("ui").getData().sbu + "'";;
 
                 oModel.read('/MRPProcurePlantSet', {
                     urlParameters: {
@@ -1016,7 +1016,7 @@ sap.ui.define([
                 var oTable = oEvent.getSource().oParent.oParent;
                 // var oTable = this.getView().byId("mainTab");
                 var oColumns = oTable.getColumns();
-                var vSBU = this.getView().getModel("ui").getData().activeSbu;
+                var vSBU = this.getView().getModel("ui").getData().sbu;
                 console.log(oColumns)
 
                 // return;

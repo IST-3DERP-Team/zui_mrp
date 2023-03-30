@@ -71,6 +71,7 @@ sap.ui.define([
             
             oModel.read("/ColumnsSet", {
                 success: function (oData, oResponse) {
+                    //console.log("ColumnsSet", oData)
                     oJSONColumnsModel.setData(oData);
 
                     if (oData.results.length > 0) {
