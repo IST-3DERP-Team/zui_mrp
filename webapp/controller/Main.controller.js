@@ -242,6 +242,11 @@ sap.ui.define([
                             _this.getView().getModel("ui").setProperty("/rowCountMrpHdr", "0");
 
                             _this.setRowReadMode("mrpHdr");
+
+                            // clear detail
+                            _this.getView().setModel(new JSONModel({
+                                results: []
+                            }), "mrpDtl");
                         }
                         
                         _this.closeLoadingDialog();
