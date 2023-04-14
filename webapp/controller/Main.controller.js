@@ -195,6 +195,8 @@ sap.ui.define([
                         if (data.results.length > 0) {
 
                             data.results.forEach((item, index) => {
+                                item.WITHRESERVED = false;
+
                                 if (index === 0) {
                                     item.Active = true;
                                 }
@@ -224,6 +226,8 @@ sap.ui.define([
                             _this.getView().getModel("ui").setProperty("/rowCountMrpHdr", iRowCount.toString());
 
                             _this.setRowReadMode("mrpHdr");
+
+                            _this.onReserveMrpHdr(true);
                         } else {
                             var oJSONModel = new sap.ui.model.json.JSONModel();
                             oJSONModel.setData(data);
@@ -379,12 +383,21 @@ sap.ui.define([
                 this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
             },
 
-            onReserveMrpHdr() {
+            onReserveMrpHdr(pAuto) {
                 this.showLoadingDialog("Loading...");
 
                 var oTable = this.byId("mrpHdrTab");
-                var aSelIdx = oTable.getSelectedIndices();
+                var aSelIdx = [];
                 var aData = [];
+
+                if (pAuto) {
+                    var iRowCount = oTable.getBinding("rows").aIndices.length;
+                    for (var i = 0; i < iRowCount; i++) {
+                        aSelIdx.push(i);
+                    }
+                } else {
+                    aSelIdx = oTable.getSelectedIndices();
+                }
                 
                 aSelIdx.forEach(item => {
                     var sPath = (oTable.getContextByIndex(item)).sPath;
@@ -435,13 +448,29 @@ sap.ui.define([
                                     var sPlantCd = oMrpHdr.PLANTCD;
                                     var sMatNo = oMrpHdr.MATNO;
 
+                                    // Highlight header rows with details
+                                    aDataMrpHdr.forEach(item => {
+                                        if (aReserveList.filter(x => x.PLANTCD == item.PLANTCD && x.HDRMATNO == item.MATNO).length > 0) {
+                                            var aDataMrpHdrAll = jQuery.extend(true, [], 
+                                                _this.getView().getModel("mrpHdr").getData().results);
+                                            var iIdx = aDataMrpHdrAll.findIndex(
+                                                x => x.TRANSNO = item.TRANSNO && x.TRANSITM == item.TRANSITM
+                                            );
+
+                                            if (iIdx >= 0) {
+                                                _this.getView().getModel("mrpHdr").setProperty("/results/" + 
+                                                iIdx.toString() + "/WITHRESERVED", true);
+                                            }
+                                        }
+                                    })
+
                                     aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.HDRMATNO == sMatNo));
                                     oJSONModel.setData(aMrpDtl);
                                     _this.getView().setModel(oJSONModel, "mrpDtl");
                                     _this._tableRendered = "mrpDtlTab";
                                     _this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
 
-                                    if (_aReserveList.length == 0) {
+                                    if (_aReserveList.length == 0 && pAuto == false) {
                                         MessageBox.information(_oCaption.INFO_NO_DATA_GENERATED);
                                     }
                                 }
@@ -468,8 +497,8 @@ sap.ui.define([
                             if (sAction == "Yes") {
                                 _this.getView().getModel("mrpDtl").setProperty("/results", []);
                                 _this.onSearchMrpHdr();
-                                _aReserveList = [];
-                                _aForMrList = [];
+                                // _aReserveList = [];
+                                // _aForMrList = [];
                             }
                         }
                     });
@@ -1081,6 +1110,7 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "MATTYPE"});
                 oDDTextParam.push({CODE: "MATGRP"});
                 oDDTextParam.push({CODE: "CUSTGRP"});
+                oDDTextParam.push({CODE: "MATNO"});
 
                 // Label
                 oDDTextParam.push({CODE: "ROWS"});

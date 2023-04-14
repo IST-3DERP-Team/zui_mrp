@@ -53,6 +53,11 @@
                             displayBehaviour="idOnly" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
+                    <sfb:controlConfiguration>
+                        <sfb:ControlConfiguration id="filterMatNo" key="MATNO" groupId="_BASIC" label="{ddtext>/MATNO}"
+                            preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idOnly" mandatory="notMandatory">
+                        </sfb:ControlConfiguration>
+                    </sfb:controlConfiguration>
                     <sfb:layoutData>
                         <FlexItemData shrinkFactor="0"/>
                     </sfb:layoutData>
@@ -90,7 +95,7 @@
                             <Button id="btnReserveMrpHdr" 
                                 icon="sap-icon://basket"
                                 text="{ddtext>/RESERVE}"
-                                press="onReserveMrpHdr"
+                                press="onReserveMrpHdr(false)"
                                 visible="true"/>
                             <Button id="btnResetMrpHdr" 
                                 icon="sap-icon://reset"
@@ -119,6 +124,9 @@
                                 visible="true" />
                         </Toolbar>
                     </uiT:extension>
+                    <uiT:rowSettingsTemplate>
+                        <uiT:RowSettings highlight="{= ${mrpHdr>WITHRESERVED} ? 'Success' : null}" />
+                    </uiT:rowSettingsTemplate>
                     <uiT:layoutData>
                         <FlexItemData growFactor="1" baseSize="0%"/>
                     </uiT:layoutData>
