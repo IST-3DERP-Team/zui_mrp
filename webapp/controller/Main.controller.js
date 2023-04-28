@@ -645,7 +645,7 @@ sap.ui.define([
 
                                         if (sMessage.length == 0) {
                                             oResult.N_IOMrp_Exp_Retmsg.results.forEach(item => {
-                                                if (item.Message) sMessage += item.Message + "\n";
+                                                if (item.Message && !sMessage.includes(item.Message)) sMessage += item.Message + "\n";
                                             })
                                         }
 
