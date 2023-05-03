@@ -99,6 +99,7 @@ sap.ui.define([
                 oSmartFilter.setModel(oModel);
 
                 // Disable all buttons
+                this.byId("btnCancelMrpHdr").setEnabled(false);
                 this.byId("btnReserveMrpHdr").setEnabled(false);
                 this.byId("btnResetMrpHdr").setEnabled(false);
                 this.byId("btnExecuteMrpHdr").setEnabled(false);
@@ -175,6 +176,7 @@ sap.ui.define([
                 this.getMrpHdr(aFilters, sFilterGlobal);
                 this.getProcurePlant();
 
+                this.byId("btnCancelMrpHdr").setEnabled(true);
                 this.byId("btnReserveMrpHdr").setEnabled(true);
                 this.byId("btnResetMrpHdr").setEnabled(true);
                 this.byId("btnExecuteMrpHdr").setEnabled(true);
@@ -388,6 +390,60 @@ sap.ui.define([
                 this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
             },
 
+            onCancelMrpHdr() {
+                var oTable = this.getView().byId("mrpHdrTab");
+                var aSelIdx = oTable.getSelectedIndices();
+
+                if (aSelIdx.length == 0) {
+                    MessageBox.warning(_oCaption.INFO_NO_SELECTED);
+                    return;
+                }
+
+                MessageBox.confirm(_oCaption.CONFIRM_PROCEED_EXECUTE, {
+                    actions: ["Yes", "No"],
+                    onClose: function (sAction) {
+                        if (sAction == "Yes") {
+                            _this.showLoadingDialog("Loading...");
+
+                            var aOrigSelIdx = [];
+                            aSelIdx.forEach(i => {
+                                aOrigSelIdx.push(oTable.getBinding("rows").aIndices[i]);
+                            })
+
+                            
+                            var oModel = _this.getOwnerComponent().getModel();
+                            aOrigSelIdx.forEach((item, iIdx) => {
+                                var oDataHdr = _this.getView().getModel("mrpHdr").getProperty("/results/" + item.toString());
+                                var entitySet = "/MRPHeaderSet(Transno='" + oDataHdr.TRANSNO +"',Transitm='" + oDataHdr.TRANSITM + "')";
+                                var param = {
+                                    "Deleted": "X"
+                                }
+            
+                                setTimeout(() => {
+                                    oModel.update(entitySet, param, {
+                                        method: "PUT",
+                                        success: function(data, oResponse) {
+                                            if (iIdx == aOrigSelIdx.length - 1) {
+                                                _this.closeLoadingDialog();
+
+                                                MessageBox.information(_oCaption.INFO_EXECUTE_SUCCESS, {
+                                                    onClose: function (sAction) {
+                                                        _this.onSearchMrpHdr();
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        error: function(err) {
+                                            _this.closeLoadingDialog();
+                                        }
+                                    });
+                                });
+                            })
+                        }
+                    }
+                });
+            },
+
             onReserveMrpHdr(pAuto) {
                 this.showLoadingDialog("Loading...");
 
@@ -439,7 +495,7 @@ sap.ui.define([
                                 "$filter": "PLANTCD eq '" + item.PLANTCD + "' and HDRMATNO eq '" + item.MATNO + "'"
                             },
                             success: function (data, response) {
-                                console.log("MRPDetailViewSet", data);
+                                //console.log("MRPDetailViewSet", data);
                                 
                                 _aReserveList.push(...data.results);
 
@@ -456,10 +512,11 @@ sap.ui.define([
                                     // Highlight header rows with details
                                     aDataMrpHdr.forEach(item => {
                                         if (aReserveList.filter(x => x.PLANTCD == item.PLANTCD && x.HDRMATNO == item.MATNO).length > 0) {
+                                            
                                             var aDataMrpHdrAll = jQuery.extend(true, [], 
                                                 _this.getView().getModel("mrpHdr").getData().results);
                                             var iIdx = aDataMrpHdrAll.findIndex(
-                                                x => x.TRANSNO = item.TRANSNO && x.TRANSITM == item.TRANSITM
+                                                x => x.TRANSNO == item.TRANSNO && x.TRANSITM == item.TRANSITM
                                             );
 
                                             if (iIdx >= 0) {
@@ -1121,6 +1178,7 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "ROWS"});
 
                 // Button
+                oDDTextParam.push({CODE: "CANCELMRP"});
                 oDDTextParam.push({CODE: "RESERVE"});
                 oDDTextParam.push({CODE: "RESET"});
                 oDDTextParam.push({CODE: "EXECUTE"});
@@ -1147,6 +1205,7 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "CONFIRM_PROCEED_EXECUTEMRP"});
                 oDDTextParam.push({CODE: "INFO_NO_DATA_GENERATED"});
                 oDDTextParam.push({CODE: "WARN_TOTAL_FORMR_GREATER_REQQTY"});
+                oDDTextParam.push({CODE: "CONFIRM_PROCEED_EXECUTE"});
                 
                 oModel.create("/CaptionMsgSet", { CaptionMsgItems: oDDTextParam  }, {
                     method: "POST",

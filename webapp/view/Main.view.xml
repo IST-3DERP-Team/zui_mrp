@@ -92,6 +92,11 @@
                                 search="filterGlobally"
                                 width="15rem"/> -->
                             <!-- <ToolbarSeparator/> -->
+                            <Button id="btnCancelMrpHdr" 
+                                icon="sap-icon://sys-cancel"
+                                text="{ddtext>/CANCELMRP}"
+                                press="onCancelMrpHdr()"
+                                visible="true"/>
                             <Button id="btnReserveMrpHdr" 
                                 icon="sap-icon://basket"
                                 text="{ddtext>/RESERVE}"
