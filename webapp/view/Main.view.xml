@@ -45,12 +45,12 @@
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
                         <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="{ddtext>/MATGRP}" controlType="dropDownList" 
-                            displayBehaviour="idOnly" mandatory="notMandatory">
+                            displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
                         <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="{ddtext>/CUSTGRP}" controlType="dropDownList" 
-                            displayBehaviour="idOnly" mandatory="notMandatory">
+                            displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
