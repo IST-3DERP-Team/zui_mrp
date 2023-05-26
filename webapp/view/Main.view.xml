@@ -34,8 +34,8 @@
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{ddtext>/IONO}" controlType="dropDownList" 
-                            displayBehaviour="idAndDescription" mandatory="notMandatory">
+                        <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{ddtext>/IONO}"
+                            preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
