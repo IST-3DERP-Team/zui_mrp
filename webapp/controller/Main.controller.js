@@ -473,29 +473,50 @@ sap.ui.define([
                 if (aData.length > 0) {
                     // Filter MRP Header
                     var aDataMrpHdr = this.getView().getModel("mrpHdr").getData().results.filter(item => item.RESERVED === true);
-                    // this.getView().getModel("mrpHdr").setProperty("/results", aDataMrpHdr);
-                    // oTable.clearSelection();
-
-                    // this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
-                    // this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
-                    // this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
-                    // this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
-                    // this.getView().getModel("ui").setProperty("/activeHdrRowPath", '/results/0');
 
                     var oModel = this.getOwnerComponent().getModel();
                     var oEntitySet = "/MRPDetailViewSet";
                     var oJSONModel = new sap.ui.model.json.JSONModel();
     
-                    _aReserveList = [];
-                    _aForMrList = [];
+                    // _aReserveList = [];
+                    // _aForMrList = [];
+                    console.log("test", JSON.parse(JSON.stringify(_aForMrList)))
                     aData.forEach((item, idx) => {
                         //console.log("adata", item)
+
+                        // Clear For MR Reservation
+                        var bExist = false;
+                        for (var i = 0; i < _aForMrList.length; i++) {
+                            
+                            if (_aForMrList[i].TRANSNO == item.TRANSNO && _aForMrList[i].TRANSITM == item.TRANSITM) {
+                                
+                                bExist = true;
+                                _aForMrList.splice(i, 1);
+                                i = -1;
+                            }
+
+                            if (i == _aForMrList.length - 1 && bExist == true) {
+                                var iHdr = _this.getView().getModel("mrpHdr").getData().results.findIndex(
+                                    x => x.TRANSNO == item.TRANSNO && x.TRANSITM == item.TRANSITM);
+                                var sQty = _this.getView().getModel("mrpHdr").getProperty("/results/" + iHdr.toString() + "/BALANCE")
+                                _this.getView().getModel("mrpHdr").setProperty("/results/" + iHdr.toString() + "/FORMR", "0.000");
+                                _this.getView().getModel("mrpHdr").setProperty("/results/" + iHdr.toString() + "/FORPR", parseFloat(sQty).toFixed(3));
+                            }
+                        }
+                        console.log("test2", JSON.parse(JSON.stringify(_aForMrList)))
+                        console.log("onreset", aData, item, _aForMrList)
+                        
                         oModel.read(oEntitySet, {
                             urlParameters: {
                                 "$filter": "PLANTCD eq '" + item.PLANTCD + "' and HDRMATNO eq '" + item.MATNO + "'"
                             },
                             success: function (data, response) {
-                                //console.log("MRPDetailViewSet", data);
+                                console.log("MRPDetailViewSet", data);
+                                
+                                data.results.forEach((item2, idx2) => {
+                                    var iRsv = _aReserveList.findIndex(x => x.PLANTCD == item2.PLANTCD && x.HDRMATNO == item2.HDRMATNO);
+                                    if (iRsv > -1) _aReserveList.splice(iRsv, 1);
+                                })
                                 
                                 _aReserveList.push(...data.results);
 
@@ -551,16 +572,129 @@ sap.ui.define([
                 }
             },
 
+            // onReserveMrpHdr(pAuto) {
+            //     this.showLoadingDialog("Loading...");
+
+            //     var oTable = this.byId("mrpHdrTab");
+            //     var aSelIdx = [];
+            //     var aData = [];
+
+            //     if (pAuto) {
+            //         var iRowCount = oTable.getBinding("rows").aIndices.length;
+            //         for (var i = 0; i < iRowCount; i++) {
+            //             aSelIdx.push(i);
+            //         }
+            //     } else {
+            //         aSelIdx = oTable.getSelectedIndices();
+            //     }
+                
+            //     aSelIdx.forEach(item => {
+            //         var sPath = (oTable.getContextByIndex(item)).sPath;
+            //         var oRowData = this.getView().getModel("mrpHdr").getProperty(sPath);
+            //         if (aData.filter(x => x.PLANTCD == oRowData.PLANTCD && x.MATNO == oRowData.MATNO).length == 0) {
+            //             aData.push(oRowData);
+            //         }
+
+            //         this.getView().getModel("mrpHdr").setProperty(sPath + "/RESERVED", true);
+            //     });
+
+            //     if (aData.length > 0) {
+            //         // Filter MRP Header
+            //         var aDataMrpHdr = this.getView().getModel("mrpHdr").getData().results.filter(item => item.RESERVED === true);
+            //         // this.getView().getModel("mrpHdr").setProperty("/results", aDataMrpHdr);
+            //         // oTable.clearSelection();
+
+            //         // this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
+            //         // this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
+            //         // this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
+            //         // this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
+            //         // this.getView().getModel("ui").setProperty("/activeHdrRowPath", '/results/0');
+
+            //         var oModel = this.getOwnerComponent().getModel();
+            //         var oEntitySet = "/MRPDetailViewSet";
+            //         var oJSONModel = new sap.ui.model.json.JSONModel();
+    
+            //         _aReserveList = [];
+            //         _aForMrList = [];
+            //         aData.forEach((item, idx) => {
+            //             //console.log("adata", item)
+            //             oModel.read(oEntitySet, {
+            //                 urlParameters: {
+            //                     "$filter": "PLANTCD eq '" + item.PLANTCD + "' and HDRMATNO eq '" + item.MATNO + "'"
+            //                 },
+            //                 success: function (data, response) {
+            //                     //console.log("MRPDetailViewSet", data);
+                                
+            //                     _aReserveList.push(...data.results);
+
+            //                     if (idx == aData.length - 1) {
+            //                         var aMrpDtl = {results:[]};
+            //                         var aReserveList = jQuery.extend(true, [], _aReserveList);
+
+            //                         var sTransNo = _this.getView().getModel("ui").getProperty("/activeTransNo");
+            //                         var sTransItm = _this.getView().getModel("ui").getProperty("/activeTransItm");
+            //                         var oMrpHdr = aDataMrpHdr.filter(x => x.TRANSNO == sTransNo && x.TRANSITM == sTransItm)[0];
+            //                         var sPlantCd = oMrpHdr.PLANTCD;
+            //                         var sMatNo = oMrpHdr.MATNO;
+
+            //                         // Highlight header rows with details
+            //                         aDataMrpHdr.forEach(item => {
+            //                             if (aReserveList.filter(x => x.PLANTCD == item.PLANTCD && x.HDRMATNO == item.MATNO).length > 0) {
+                                            
+            //                                 var aDataMrpHdrAll = jQuery.extend(true, [], 
+            //                                     _this.getView().getModel("mrpHdr").getData().results);
+            //                                 var iIdx = aDataMrpHdrAll.findIndex(
+            //                                     x => x.TRANSNO == item.TRANSNO && x.TRANSITM == item.TRANSITM
+            //                                 );
+
+            //                                 if (iIdx >= 0) {
+            //                                     _this.getView().getModel("mrpHdr").setProperty("/results/" + 
+            //                                     iIdx.toString() + "/WITHRESERVED", true);
+            //                                 }
+            //                             }
+            //                         })
+
+            //                         aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.HDRMATNO == sMatNo));
+            //                         oJSONModel.setData(aMrpDtl);
+            //                         _this.getView().setModel(oJSONModel, "mrpDtl");
+            //                         _this._tableRendered = "mrpDtlTab";
+            //                         _this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
+
+            //                         if (_aReserveList.length == 0 && pAuto == false) {
+            //                             MessageBox.information(_oCaption.INFO_NO_DATA_GENERATED);
+            //                         }
+            //                     }
+
+            //                     _this.closeLoadingDialog();
+            //                 },
+            //                 error: function (err) { 
+            //                     console.log("error", err)
+            //                     _this.closeLoadingDialog();
+            //                 }
+            //             })
+            //         })
+            //     } else {
+            //         MessageBox.information(_oCaption.INFO_NO_SELECTED);
+            //         _this.closeLoadingDialog();
+            //     }
+            // },
+
             onResetMrpHdr() {
                 if (_this.getView().getModel("mrpDtl")) {
-                    MessageBox.confirm(_oCaption.CONFIRM_DISREGARD_CHANGE, {
+                    MessageBox.confirm(_oCaption.CONFIRM_PROCEED_RESET_MRP, {
                         actions: ["Yes", "No"],
                         onClose: function (sAction) {
                             if (sAction == "Yes") {
-                                _this.getView().getModel("mrpDtl").setProperty("/results", []);
-                                _this.onSearchMrpHdr();
-                                // _aReserveList = [];
-                                // _aForMrList = [];
+                                var oTable = _this.byId("mrpHdrTab");
+                                var aSelIdx = oTable.getSelectedIndices();
+
+                                if (aSelIdx.length > 0) {
+                                    _this.onReserveMrpHdr(false);
+                                }
+                                else {
+                                    _this.getView().getModel("mrpDtl").setProperty("/results", []);
+                                    _this.onSearchMrpHdr();
+                                }
                             }
                         }
                     });
@@ -1206,6 +1340,7 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "INFO_NO_DATA_GENERATED"});
                 oDDTextParam.push({CODE: "WARN_TOTAL_FORMR_GREATER_REQQTY"});
                 oDDTextParam.push({CODE: "CONFIRM_PROCEED_EXECUTE"});
+                oDDTextParam.push({CODE: "CONFIRM_PROCEED_RESET_MRP"});
                 
                 oModel.create("/CaptionMsgSet", { CaptionMsgItems: oDDTextParam  }, {
                     method: "POST",

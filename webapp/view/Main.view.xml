@@ -101,7 +101,7 @@
                                 icon="sap-icon://basket"
                                 text="{ddtext>/RESERVE}"
                                 press="onReserveMrpHdr(false)"
-                                visible="true"/>
+                                visible="false"/>
                             <Button id="btnResetMrpHdr" 
                                 icon="sap-icon://reset"
                                 text="{ddtext>/RESET}"
