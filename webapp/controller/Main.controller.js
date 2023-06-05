@@ -480,7 +480,7 @@ sap.ui.define([
     
                     // _aReserveList = [];
                     // _aForMrList = [];
-                    console.log("test", JSON.parse(JSON.stringify(_aForMrList)))
+
                     aData.forEach((item, idx) => {
                         //console.log("adata", item)
 
@@ -503,8 +503,6 @@ sap.ui.define([
                                 _this.getView().getModel("mrpHdr").setProperty("/results/" + iHdr.toString() + "/FORPR", parseFloat(sQty).toFixed(3));
                             }
                         }
-                        console.log("test2", JSON.parse(JSON.stringify(_aForMrList)))
-                        console.log("onreset", aData, item, _aForMrList)
                         
                         oModel.read(oEntitySet, {
                             urlParameters: {
