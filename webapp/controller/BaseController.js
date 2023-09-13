@@ -5,13 +5,11 @@ sap.ui.define([
     "sap/m/MessageBox",
     "sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
-    'sap/ui/model/Sorter',
-    "sap/ui/Device",
-    "sap/ui/table/library",
-    "sap/m/TablePersoController",
-    'sap/m/MessageToast',
-	'sap/m/SearchField'
-  ], function (Controller, JSONModel, MessageBox, Filter, FilterOperator, Sorter, Device, library, TablePersoController, MessageToast, SearchField) {
+    "sap/ui/model/Sorter",
+    "sap/ui/core/routing/HashChanger",
+    "../js/TableFilter",
+    "../js/TableValueHelp"
+  ], function (Controller, JSONModel, MessageBox, Filter, FilterOperator, Sorter, HashChanger, TableFilter, TableValueHelp) {
   
     "use strict";
 
@@ -20,7 +18,8 @@ sap.ui.define([
     var _sSbu = "";
 
     var _sapDateFormat = sap.ui.core.format.DateFormat.getDateInstance({pattern : "yyyy-MM-dd" });
-    var _sapDateTimeFormat = sap.ui.core.format.DateFormat.getDateInstance({pattern : "yyyy-MM-dd HH24:MI:SS" });
+    var _sapDateFormatPH = sap.ui.core.format.DateFormat.getDateInstance({pattern : "MM/dd/yyyy" });
+    var _sapDateTimeFormat = sap.ui.core.format.DateFormat.getDateInstance({pattern : "MM/dd/yyyy HH24:MI:SS" });
     var _sapTimeFormat = sap.ui.core.format.DateFormat.getTimeInstance({pattern: "KK:mm:ss a"});
    
     return Controller.extend("zuimrp.controller.BaseController", {
@@ -30,32 +29,55 @@ sap.ui.define([
             _sSbu = pSbu;
 
             this._aColumns = {};
+            this._colFilters = {};
             this._aFilterableColumns = {};
             this._aSortableColumns = {};
-            this._oViewSettingsDialog = {};
+            this._aInvalidValueState = [];
+
+            this.getView().setModel(new JSONModel({}), "base");
+
+            this.getColumnProp();
+            this._tableFilter = TableFilter;
+            this._tableValueHelp = TableValueHelp;
+        },
+
+        getAppAction: async function() {
+            if (sap.ushell.Container !== undefined) {
+                const fullHash = new HashChanger().getHash();
+                const urlParsing = await sap.ushell.Container.getServiceAsync("URLParsing");
+                const shellHash = urlParsing.parseShellHash(fullHash);
+                const sAction = shellHash.action;
+                var bAppChange;
+
+                if (sAction == "display") bAppChange = false;
+                else bAppChange = true;
+            } else {
+                bAppChange = true;
+            }
+
+            _this.getView().getModel("base").setProperty("/appChange", bAppChange);
         },
    
-        getColumns: async function(pTableList) {
+        getColumns(pTableList) {
             _aTable = pTableList;
 
-            var oModelColumns = new JSONModel();
-            var sPath = jQuery.sap.getModulePath("zuimrp", "/model/columns.json")
-            await oModelColumns.loadData(sPath);
-
-            var oColumns = oModelColumns.getData();
-            var oModel = this.getOwnerComponent().getModel();
-
-            oModel.metadataLoaded().then(() => {
-                pTableList.forEach(item => {
-                    setTimeout(() => {
-                        this.getDynamicColumns(oColumns, item);
-                    }, 100);
-                });
-            })
+            pTableList.forEach(item => {
+                setTimeout(() => {
+                    _this.getDynamicColumns(item);
+                }, 100);
+            });
         },
 
-        getDynamicColumns(pColumn, pTable) {
-            var oColumns = pColumn;
+        getColumnProp: async function() {
+            var sPath = jQuery.sap.getModulePath("zuimrp", "/model/columns.json");
+
+            var oModelColumns = new JSONModel();
+            await oModelColumns.loadData(sPath);
+
+            _this._oModelColumns = oModelColumns.getData();
+        },
+
+        getDynamicColumns: async function(pTable) {
             var modCode = pTable.modCode;
             var tblSrc = pTable.tblSrc;
             var tblId = pTable.tblId;
@@ -68,274 +90,545 @@ sap.ui.define([
                 type: modCode,
                 tabname: tblSrc
             });
-            
-            oModel.read("/ColumnsSet", {
-                success: function (oData, oResponse) {
-                    //console.log("ColumnsSet", oData)
-                    oJSONColumnsModel.setData(oData);
 
-                    if (oData.results.length > 0) {
-                        oData.results.forEach(col => {
-                            if (col.ColumnName == "COMPLETE")
-                            col.DataType =  "BOOLEAN";
-                        })
-                        
-                        var aColumns = _this.setTableColumns(oColumns[tblModel], oData.results);   
-                        _this._aColumns[tblModel] = aColumns["columns"];
-                        _this._aFilterableColumns[tblModel] = aColumns["filterableColumns"]; 
-                        _this._aSortableColumns[tblModel] = aColumns["sortableColumns"]; 
-                        if (_this.byId(tblId).getColumns().length == 0) {
-                            _this.addColumns(_this.byId(tblId), aColumns["columns"], tblModel);
+            return new Promise((resolve, reject) => {
+                oModel.read("/ColumnsSet", {
+                    success: function (oData, oResponse) {
+                        oJSONColumnsModel.setData(oData);
+                        console.log("ColumnsSet", oData)
+                        if (oData.results.length > 0) {
+                            oData.results.forEach(col => {
+                                if (col.ColumnName == "COMPLETE")
+                                col.DataType =  "BOOLEAN";
+                            })
+                            
+                            _this._aColumns[tblModel] = _this.setTableColumns(tblId, tblModel, oData.results)["columns"];
+                            _this.setRowReadMode(tblModel);
+                            
+                            var tblProps = {
+                                aColumns: _this._aColumns[tblModel]
+                            };
+                            _this.onAfterTableRender(tblId, tblProps);
+                            resolve();
                         }
-
-                        var tblProps = {
-                            aColumns: _this._aColumns[tblModel],
-                            aFilterableColumns: _this._aFilterableColumns[tblModel],
-                            aSortableColumns: _this._aSortableColumns[tblModel]
-                        };
-                        _this.onAfterTableRender(tblId, tblProps);
+                    },
+                    error: function (err) {
+                        _this.closeLoadingDialog();
+                        resolve();
                     }
-                },
-                error: function (err) {
-                    console.log("err", err)
-                    _this.closeLoadingDialog();
+                });
+            })
+        },
+
+        setTableColumns: function(pTable, pModel, pColumn) {
+            var oModel = new JSONModel();
+            oModel.setData({
+                columns: pColumn,
+                rows: []
+            });
+
+            var oTable = _this.getView().byId(pTable);
+            oTable.setModel(oModel);
+
+            oTable.bindColumns("/columns", function (index, context) {
+                var sColumnId = context.getObject().ColumnName;
+                var sColumnLabel = context.getObject().ColumnLabel;
+                var sColumnType = context.getObject().DataType;
+                var sColumnVisible = context.getObject().Visible;
+                var sColumnSorted = context.getObject().Sorted;
+                var sColumnSortOrder = context.getObject().SortOrder;
+                var sColumnWidth = context.getObject().ColumnWidth;
+                
+                if (sColumnType === "NUMBER") {
+                    return new sap.ui.table.Column({
+                        id: pModel + "-" + sColumnId,
+                        label: sColumnLabel,
+                        template: new sap.m.Text({ text: "{" + sColumnId + "}", wrapping: false }),
+                        width: sColumnWidth + "px",
+                        hAlign: "End",
+                        sortProperty: sColumnId,
+                        filterProperty: sColumnId,
+                        autoResizable: true,
+                        visible: sColumnVisible,
+                        sorted: sColumnSorted,
+                        sortOrder: ((sColumnSorted === true) ? sColumnSortOrder : "Ascending")
+                    });
+                } else if (sColumnType === "BOOLEAN") {
+                    return new sap.ui.table.Column({
+                        id: pModel + "-" + sColumnId,
+                        label: sColumnLabel,
+                        template: new sap.m.CheckBox({
+                            selected: "{" + sColumnId + "}",
+                            editable: false
+                        }),
+                        width: sColumnWidth + "px",
+                        hAlign: "Center",
+                        sortProperty: sColumnId,
+                        filterProperty: sColumnId,
+                        autoResizable: true,
+                        visible: sColumnVisible,
+                        sorted: sColumnSorted,
+                        sortOrder: ((sColumnSorted === true) ? sColumnSortOrder : "Ascending")
+                    });
+                } else {
+                    return new sap.ui.table.Column({
+                        id: pModel + "-" + sColumnId,
+                        label: sColumnLabel,
+                        template: _this.columnTemplate(sColumnId),
+                        width: sColumnWidth + "px",
+                        hAlign: "Left",
+                        sortProperty: sColumnId,
+                        filterProperty: sColumnId,
+                        autoResizable: true,
+                        visible: sColumnVisible,
+                        sorted: sColumnSorted,
+                        sortOrder: ((sColumnSorted === true) ? sColumnSortOrder : "Ascending")
+                    });
                 }
             });
-        },
 
-        setTableColumns: function(pColumnLocal, pColumn) {
-            var oColumnLocal = (pColumnLocal ? pColumnLocal : []);
-            var oColumn = pColumn;
-            
-            var aColumns = [];
-            var aFilterableColumns = [];
-            var aSortableColumns = [];
-
-            oColumn.forEach((prop, idx) => {
-                var vCreatable = prop.Creatable;
-                var vUpdatable = prop.Editable;
-                var vSortable = true;
-                var vSorted = prop.Sorted;
-                var vSortOrder = prop.SortOrder;
-                var vFilterable = true;
-                var vName = prop.ColumnLabel;
-                var oColumnLocalProp = oColumnLocal.filter(col => col.name.toUpperCase() === prop.ColumnName);
-                var vShowable = true;
-                var vOrder = prop.Order;
-
-                if (vShowable) {
-                    //sortable
-                    if (vSortable) {
-                        aSortableColumns.push({
-                            name: prop.ColumnName, 
-                            label: vName, 
-                            position: +vOrder, 
-                            sorted: vSorted,
-                            sortOrder: vSortOrder
-                        });
+            //date/number sorting
+            oTable.attachSort(function(oEvent) {
+                var sPath = oEvent.getParameter("column").getSortProperty();
+                var bDescending = false;
+                
+                oTable.getColumns().forEach(col => {
+                    if (col.getSorted()) {
+                        col.setSorted(false);
                     }
+                })
+                
+                oEvent.getParameter("column").setSorted(true); //sort icon initiator
 
-                    //filterable
-                    if (vFilterable) {
-                        aFilterableColumns.push({
-                            name: prop.ColumnName, 
-                            label: vName, 
-                            position: +vOrder,
-                            value: "",
-                            connector: "Contains"
-                        });
-                    }
+                if (oEvent.getParameter("sortOrder") === "Descending") {
+                    bDescending = true;
+                    oEvent.getParameter("column").setSortOrder("Descending") //sort icon Descending
+                }
+                else {
+                    oEvent.getParameter("column").setSortOrder("Ascending") //sort icon Ascending
                 }
 
-                //columns
-                aColumns.push({
-                    name: prop.ColumnName, 
-                    label: vName, 
-                    position: +vOrder,
-                    type: prop.DataType,
-                    creatable: vCreatable,
-                    updatable: vUpdatable,
-                    sortable: vSortable,
-                    filterable: vFilterable,
-                    visible: prop.Visible,
-                    required: prop.Mandatory,
-                    width: prop.ColumnWidth + 'px',
-                    sortIndicator: vSortOrder === '' ? "None" : vSortOrder,
-                    hideOnChange: false,
-                    valueHelp: oColumnLocalProp.length === 0 ? {"show": false} : oColumnLocalProp[0].valueHelp,
-                    showable: vShowable,
-                    key: prop.Key === '' ? false : true,
-                    maxLength: prop.Length,
-                    precision: prop.Length,
-                    scale: prop.Decimal //prop.Scale !== undefined ? prop.Scale : null
-                })
+                var oSorter = new sap.ui.model.Sorter(sPath, bDescending ); //sorter(columnData, If Ascending(false) or Descending(True))
+                var oColumn = oColumns.filter(fItem => fItem.ColumnName === oEvent.getParameter("column").getProperty("sortProperty"));
+                var columnType = oColumn[0].DataType;
+
+                if (columnType === "DATETIME") {
+                    oSorter.fnCompare = function(a, b) {
+                        // parse to Date object
+                        var aDate = new Date(a);
+                        var bDate = new Date(b);
+
+                        if (bDate === null) { return -1; }
+                        if (aDate === null) { return 1; }
+                        if (aDate < bDate) { return -1; }
+                        if (aDate > bDate) { return 1; }
+
+                        return 0;
+                    };
+                }
+                else if (columnType === "NUMBER") {
+                    oSorter.fnCompare = function(a, b) {
+                        // parse to Date object
+                        var aNumber = +a;
+                        var bNumber = +b;
+
+                        if (bNumber === null) { return -1; }
+                        if (aNumber === null) { return 1; }
+                        if (aNumber < bNumber) { return -1; }
+                        if (aNumber > bNumber) { return 1; }
+
+                        return 0;
+                    };
+                }
+                
+                oTable.getBinding('rows').sort(oSorter);
+                // prevent internal sorting by table
+                oEvent.preventDefault();
+            });
+
+            TableFilter.updateColumnMenu(pTable, this);
+
+            // Add Column Local Props
+            pColumn.forEach(item => {
+                if (_this._oModelColumns[pModel] && _this._oModelColumns[pModel].filter(x => x.ColumnName == item.ColumnName).length > 0) {
+                    item.ValueHelp = _this._oModelColumns[pModel].filter(x => x.ColumnName == item.ColumnName)[0].ValueHelp;
+                }
+                else {
+                    item.ValueHelp = { "show": false };
+                }
             })
 
-            _this.createViewSettingsDialog("sort", 
-                new JSONModel({
-                    items: aSortableColumns,
-                    rowCount: aSortableColumns.length,
-                    activeRow: 0,
-                    table: ""
-                })
-            );
-
-            _this.createViewSettingsDialog("filter", 
-                new JSONModel({
-                    items: aFilterableColumns,
-                    rowCount: aFilterableColumns.length,
-                    table: ""
-                })
-            );
-
-            aColumns.sort((a,b) => (a.position > b.position ? 1 : -1));
-            var aColumnProp = aColumns.filter(item => item.showable === true);
-
-            _this.createViewSettingsDialog("column", 
-                new JSONModel({
-                    items: aColumnProp,
-                    rowCount: aColumnProp.length,
-                    table: ""
-                })
-            );
-
-            return { columns: aColumns, sortableColumns: aSortableColumns, filterableColumns: aFilterableColumns };
+            return {
+                columns: pColumn
+            }
         },
 
-        addColumns(pTable, pColumn, pModel) {
-            var aColumns = pColumn.filter(item => item.showable === true)
-            aColumns.sort((a,b) => (a.position > b.position ? 1 : -1));
+        columnTemplate: function (sColumnId) {
+            var oColumnTemplate;
 
-            aColumns.forEach(col => {
-                // console.log(col)
-                if (col.type === "STRING" || col.type === "DATETIME") {
-                    pTable.addColumn(new sap.ui.table.Column({
-                        id: pModel + "Col" + col.name,
-                        width: col.width,
-                        sortProperty: col.name,
-                        filterProperty: col.name,
-                        label: new sap.m.Text({text: col.label}),
-                        template: new sap.m.Text({text: "{" + pModel + ">" + col.name + "}"}),
-                        visible: col.visible
-                    }));
-                }
-                else if (col.type === "NUMBER") {
-                    pTable.addColumn(new sap.ui.table.Column({
-                        id: pModel + "Col" + col.name,
-                        width: col.width,
-                        hAlign: "End",
-                        sortProperty: col.name,
-                        filterProperty: col.name,
-                        label: new sap.m.Text({text: col.label}),
-                        template: new sap.m.Text({text: "{" + pModel + ">" + col.name + "}"}),
-                        visible: col.visible
-                    }));
-                }
-                else if (col.type === "BOOLEAN" ) {
-                    pTable.addColumn(new sap.ui.table.Column({
-                        id: pModel + "Col" + col.name,
-                        width: col.width,
-                        hAlign: "Center",
-                        sortProperty: col.name,
-                        filterProperty: col.name,                            
-                        label: new sap.m.Text({text: col.label}),
-                        template: new sap.m.CheckBox({selected: "{" + pModel + ">" + col.name + "}", editable: false}),
-                        visible: col.visible
-                    }));
-                }
-            })
+            oColumnTemplate = new sap.m.Text({ 
+                text: "{" + sColumnId + "}", 
+                wrapping: false,
+                tooltip: "{" + sColumnId + "}"
+            }); //default text
+
+            return oColumnTemplate;
         },
 
         setRowReadMode(pModel) {
             if (!_this._aColumns[pModel]) return;
 
             var oTable = this.byId(pModel + "Tab");
-            oTable.getColumns().forEach((col, idx) => {     
-                _this._aColumns[pModel].filter(item => item.label === col.getLabel().getText())
+            var sColName = "";
+
+            oTable.getColumns().forEach((col, idx) => {
+                if (col.mAggregations.template.mBindingInfos.text !== undefined) {
+                    sColName = col.mAggregations.template.mBindingInfos.text.parts[0].path;
+                }
+                else if (col.mAggregations.template.mBindingInfos.selected !== undefined) {
+                    sColName = col.mAggregations.template.mBindingInfos.selected.parts[0].path;
+                }
+                else if (col.mAggregations.template.mBindingInfos.value !== undefined) {
+                    sColName = col.mAggregations.template.mBindingInfos.value.parts[0].path;
+                }
+
+                _this._aColumns[pModel].filter(item => item.ColumnName === sColName)
                     .forEach(ci => {
-                        if (ci.type === "STRING" || ci.type === "NUMBER") {
+                        if (ci.DataType === "STRING" || ci.DataType === "DATETIME" || ci.DataType === "NUMBER") {
                             col.setTemplate(new sap.m.Text({
-                                text: "{" + pModel + ">" + ci.name + "}",
-                                wrapping: false,
-                                tooltip: "{" + pModel + ">" + ci.name + "}"
+                                text: "{" + pModel + ">" + sColName + "}",
+                                wrapping: false
                             }));
                         }
-                        else if (ci.type === "BOOLEAN") {
-                            col.setTemplate(new sap.m.CheckBox({selected: "{" + pModel + ">" + ci.name + "}", editable: false}));
-                        }
-
-                        if (ci.required) {
-                            col.getLabel().removeStyleClass("requiredField");
+                        else if (ci.DataType === "BOOLEAN") {
+                            col.setTemplate(new sap.m.CheckBox({
+                                selected: "{" + pModel + ">" + sColName + "}",
+                                editable: false
+                            }));
                         }
                     })
+
+                col.getLabel().removeStyleClass("sapMLabelRequired");
+                col.getLabel().removeStyleClass("requiredField");
             })
+
+            if (_this.getView().getModel(pModel) != undefined) {
+                oTable.getModel().setProperty("/rows", _this.getView().getModel(pModel).getData().results);
+            }
+            
+            TableFilter.applyColFilters(_this);
+            _this.setReqColHdrColor(pModel);
         },
 
         setRowEditMode(pModel) {
-            this.getView().getModel(pModel).getData().results.forEach(item => item.Edited = false);
-
-            var oTable = this.byId(pModel + "Tab");
-
+            var oTable = _this.byId(pModel + "Tab");
+            
             oTable.getColumns().forEach((col, idx) => {
-                this._aColumns[pModel].filter(item => item.label === col.getLabel().getText())
+                var sColName = "";
+
+                if (col.mAggregations.template.mBindingInfos.text !== undefined) {
+                    sColName = col.mAggregations.template.mBindingInfos.text.parts[0].path;
+                }
+                else if (col.mAggregations.template.mBindingInfos.selected !== undefined) {
+                    sColName = col.mAggregations.template.mBindingInfos.selected.parts[0].path;
+                }
+                else if (col.mAggregations.template.mBindingInfos.value !== undefined) {
+                    sColName = col.mAggregations.template.mBindingInfos.value.parts[0].path;
+                }
+                
+                _this._aColumns[pModel].filter(item => item.ColumnName === sColName)
                     .forEach(ci => {
-                        if (!ci.hideOnChange && ci.updatable) {
-                            if (ci.type === "BOOLEAN") {
-                                col.setTemplate(new sap.m.CheckBox({selected: "{" + pModel + ">" + ci.name + "}", editable: true}));
-                            }
-                            else if (ci.valueHelp["show"]) {
-                                col.setTemplate(new sap.m.Input({
-                                    // id: "ipt" + ci.name,
+                        if (ci.Editable) {
+                            if (ci.ValueHelp["show"]) {
+                                var bValueFormatter = false;
+                                var sSuggestItemText = ci.ValueHelp["SuggestionItems"].text;
+                                var sSuggestItemAddtlText = ci.ValueHelp["SuggestionItems"].additionalText !== undefined ? ci.ValueHelp["SuggestionItems"].additionalText : '';                                    
+                                var sTextFormatMode = "Key";
+
+                                if (ci.TextFormatMode && ci.TextFormatMode !== "" && ci.TextFormatMode !== "Key" && ci.ValueHelp["items"].value !== ci.ValueHelp["items"].text) {
+                                    sTextFormatMode = ci.TextFormatMode;
+                                    bValueFormatter = true;
+
+                                    if (ci.ValueHelp["SuggestionItems"].additionalText && ci.ValueHelp["SuggestionItems"].text !== ci.ValueHelp["SuggestionItems"].additionalText) {
+                                        if (sTextFormatMode === "ValueKey" || sTextFormatMode === "Value") {
+                                            sSuggestItemText = ci.ValueHelp["SuggestionItems"].additionalText;
+                                            sSuggestItemAddtlText = ci.ValueHelp["SuggestionItems"].text;
+                                        }
+                                    }
+                                }
+                                
+                                var oInput = new sap.m.Input({
                                     type: "Text",
-                                    value: "{" + pModel + ">" + ci.name + "}",
-                                    maxLength: +ci.maxLength,
                                     showValueHelp: true,
-                                    valueHelpRequest: this.handleValueHelp.bind(this),
+                                    valueHelpRequest: TableValueHelp.handleTableValueHelp.bind(this),
                                     showSuggestion: true,
-                                    maxSuggestionWidth: ci.valueHelp["suggestionItems"].additionalText !== undefined ? ci.valueHelp["suggestionItems"].maxSuggestionWidth : "1px",
+                                    maxSuggestionWidth: ci.ValueHelp["SuggestionItems"].additionalText !== undefined ? ci.ValueHelp["SuggestionItems"].maxSuggestionWidth : "1px",
                                     suggestionItems: {
-                                        path: ci.valueHelp["items"].path,
-                                        length: 1000,
+                                        path: ci.ValueHelp["SuggestionItems"].path,
+                                        length: 10000,
                                         template: new sap.ui.core.ListItem({
-                                            key: "{" + ci.valueHelp["items"].value + "}",
-                                            text: "{" + ci.valueHelp["items"].value + "}",
-                                            additionalText: ci.valueHelp["suggestionItems"].additionalText !== undefined ? ci.valueHelp["suggestionItems"].additionalText : '',
+                                            key: ci.ValueHelp["SuggestionItems"].text,
+                                            text: sSuggestItemText,
+                                            additionalText: sSuggestItemAddtlText,
                                         }),
                                         templateShareable: false
                                     },
-                                    change: this.onValueHelpLiveInputChange.bind(this)
+                                    // suggest: this.handleSuggestion.bind(this),
+                                    change: this.onValueHelpInputChange.bind(this)
+                                })
+
+                                if (bValueFormatter) {
+                                    oInput.setProperty("textFormatMode", sTextFormatMode)
+
+                                    oInput.bindValue({  
+                                        parts: [{ path: pModel + ">" + sColName }, { value: ci.ValueHelp["items"].path }, { value: ci.ValueHelp["items"].value }, { value: ci.ValueHelp["items"].text }, { value: sTextFormatMode }],
+                                        formatter: this.formatValueHelp.bind(this)
+                                    });
+                                }
+                                else {
+                                    oInput.bindValue({  
+                                        parts: [  
+                                            { path: pModel + ">" + sColName }
+                                        ]
+                                    });
+                                }
+
+                                col.setTemplate(oInput);
+                            }
+                            else if (ci.DataType === "BOOLEAN") {
+                                col.setTemplate(new sap.m.CheckBox({selected: "{" + pModel + ">" + sColName + "}", 
+                                    select: this.onCheckBoxChange.bind(this), 
+                                    editable: true
                                 }));
                             }
-                            else if (ci.type === "NUMBER") {
+                            else if (ci.DataType === "NUMBER") {
                                 col.setTemplate(new sap.m.Input({
                                     type: sap.m.InputType.Number,
                                     textAlign: sap.ui.core.TextAlign.Right,
-                                    value: "{path:'" + pModel + ">" + ci.name + "', type:'sap.ui.model.odata.type.Decimal', formatOptions:{ minFractionDigits:" + ci.scale + ", maxFractionDigits:" + ci.scale + " }, constraints:{ precision:" + ci.precision + ", scale:" + ci.scale + " }}",
-                                    liveChange: this.onNumberLiveChange.bind(this)
+                                    // value: "{" + pModel + ">" + sColName + "}",
+                                    value: "{path:'" + pModel + ">" + sColName + "', formatOptions:{ minFractionDigits:" + ci.scale + ", maxFractionDigits:" + ci.scale + " }, constraints:{ precision:" + ci.precision + ", scale:" + ci.scale + " }}",
+                                    liveChange: this.onNumberLiveChange.bind(this), 
+                                    enabled: true
                                 }));
                             }
+                            else if (ci.DataType === "DATE") {
+                                col.setTemplate(new sap.m.DatePicker({
+                                    value: "{" + pModel + ">" + sColName + "}",
+                                    displayFormat: "MM/dd/yyyy",
+                                    valueFormat: "MM/dd/yyyy",
+                                    change: this.onDateChange.bind(this),
+                                    navigate: this.onClickDate.bind(this)
+                                }))
+                            }
                             else {
-                                if (ci.maxLength !== null) {
-                                    col.setTemplate(new sap.m.Input({
-                                        value: "{" + pModel + ">" + ci.name + "}",
-                                        maxLength: +ci.maxLength,
-                                        liveChange: this.onInputLiveChange.bind(this)
-                                    }));
-                                }
-                                else {
-                                    col.setTemplate(new sap.m.Input({
-                                        value: "{" + pModel + ">" + ci.name + "}",
-                                        liveChange: this.onInputLiveChange.bind(this)
-                                    }));
-                                }
-                            }                                
+                                col.setTemplate(new sap.m.Input({
+                                    value: "{" + pModel + ">" + sColName + "}",
+                                    liveChange: this.onInputLiveChange.bind(this)
+                                }));
+                            }
                         }
 
-                        if (ci.required) {
+                        if (ci.Mandatory) {
+                            col.getLabel().addStyleClass("sapMLabelRequired");
                             col.getLabel().addStyleClass("requiredField");
                         }
-                    })
+                    })                
             })
+
+            _this.getView().getModel(pModel).getData().results.forEach(item => item.EDITED = false);
+        },
+
+        handleValueHelp: function(oEvent) {
+            var oModel = this.getOwnerComponent().getModel();
+            var oSource = oEvent.getSource();
+            console.log("handleValueHelp", oSource);
+            var sEntity = oSource.getBindingInfo("suggestionItems").path;
+            var sModel = oSource.getBindingInfo("value").parts[0].model;
+
+            this._inputId = oSource.getId();
+            this._inputValue = oSource.getValue();
+            this._inputSource = oSource;
+            this._inputField = oSource.getBindingInfo("value").parts[0].path;
+
+            var vCellPath = _this._inputField;
+            var vColProp = _this._aColumns[sModel].filter(item => item.ColumnName === vCellPath);
+            var vItemValue = vColProp[0].valueHelp.items.value;
+            var vItemDesc = vColProp[0].valueHelp.items.text;
+
+            var sFilter = "";
+
+            if (this._inputField == "DESTHUID") {
+                var sPath = oSource.getParent().oBindingContexts[sModel].sPath;
+                var oHu = _this.getView().getModel("hu").getProperty(sPath);
+                var oHdr = _this.getView().getModel("hdr").getData().results[0];
+                sEntity = "/InfoHUDestSet";
+                
+                sFilter = "HUTYPE eq '" + oHu.HUTYPE + "' and PLANTCD eq '" + oHdr.ISSPLANT + "' and SLOC eq '" + oHu.SLOC + 
+                    "' and WAREHOUSE eq '" + oHdr.WAREHOUSE + "' and STORAGEAREA eq '" + oHdr.STORAGEAREA + "'";
+
+                //console.log("DESTHUID", sFilter)
+            }
+            
+            oModel.read(sEntity, {
+                urlParameters: {
+                    "$filter": sFilter
+                },
+                success: function (data, response) {
+                    console.log("handleValueHelp", data)
+                    data.results.forEach(item => {
+                        item.VHTitle = item[vItemValue];
+                        item.VHDesc = ""; //item[vItemDesc];
+                        item.VHSelected = (item[vItemValue] === _this._inputValue);
+                    });
+
+                    // create value help dialog
+                    if (!_this._valueHelpDialog) {
+                        _this._valueHelpDialog = sap.ui.xmlfragment(
+                            "zuimrp.view.fragments.dialog.ValueHelpDialog",
+                            _this
+                        );
+
+                        _this._valueHelpDialog.setModel(
+                            new JSONModel({
+                                items: data.results,
+                                title: vColProp[0].label,
+                                table: sModel
+                            })
+                        )
+
+                        _this.getView().addDependent(_this._valueHelpDialog);
+                    }
+                    else {
+                        _this._valueHelpDialog.setModel(
+                            new JSONModel({
+                                items: data.results,
+                                title: vColProp[0].label,
+                                table: sModel
+                            })
+                        )
+                    }                            
+
+                    _this._valueHelpDialog.open();
+                    console.log(_this.getView())
+                },
+                error: function (err) { 
+                    _this.closeLoadingDialog();
+                }
+            })
+        },
+
+        handleValueHelpSearch : function (oEvent) {
+            var sValue = oEvent.getParameter("value");
+
+            var oFilter = new sap.ui.model.Filter({
+                filters: [
+                    new sap.ui.model.Filter("VHTitle", sap.ui.model.FilterOperator.Contains, sValue),
+                    new sap.ui.model.Filter("VHDesc", sap.ui.model.FilterOperator.Contains, sValue)
+                ],
+                and: false
+            });
+
+            oEvent.getSource().getBinding("items").filter([oFilter]);
+        },
+
+        handleValueHelpClose : function (oEvent) {               
+            if (oEvent.sId === "confirm") {                  
+                var oSelectedItem = oEvent.getParameter("selectedItem");               
+                //var sTable = this._oViewSettingsDialog["zuimrp.view.fragments.ValueHelpDialog"].getModel().getData().table;
+                var sTable = this._valueHelpDialog.getModel().getData().table;
+
+                if (oSelectedItem) {
+                    this._inputSource.setValue(oSelectedItem.getTitle());
+
+                    if (this._inputValue !== oSelectedItem.getTitle()) {
+                        var sRowPath = this._inputSource.getBindingInfo("value").binding.oContext.sPath;
+                        this.getView().getModel(sTable).setProperty(sRowPath + '/EDITED', true);
+                    }
+                }
+
+                this._inputSource.setValueState("None");
+                this.addRemoveValueState(true, this._inputSource.getId());
+            }
+        },
+
+        onValueHelpRequest: async function(oEvent) {
+            TableValueHelp.handleTableValueHelp(oEvent);
+        },
+
+        onValueHelpInputChange: function(oEvent) {
+            console.log("onValueHelpInputChange")
+            if (this._validationErrors === undefined) this._validationErrors = [];
+
+            var oSource = oEvent.getSource();
+            var isInvalid = !oSource.getSelectedKey() && oSource.getValue().trim();
+            oSource.setValueState(isInvalid ? "Error" : "None");
+
+            // var sRowPath = oSource.getBindingInfo("value").binding.oContext.sPath;
+            var sRowPath = "";
+            var sModel = oSource.getBindingInfo("value").parts[0].model;
+
+            oSource.getSuggestionItems().forEach(item => {
+                if (item.getProperty("key") === oSource.getValue().trim()) {
+                    isInvalid = false;
+                    oSource.setValueState(isInvalid ? "Error" : "None");
+                }
+            })
+
+            if (isInvalid) this._validationErrors.push(oEvent.getSource().getId());
+            else {
+                this._validationErrors.forEach((item, index) => {
+                    if (item === oEvent.getSource().getId()) {
+                        this._validationErrors.splice(index, 1)
+                    }
+                })
+            }
+
+            sRowPath = oSource.oParent.getBindingContext(sModel).sPath;
+            _this.getView().getModel(sModel).setProperty(sRowPath + '/' + oSource.getBindingInfo("value").parts[0].path, oSource.getSelectedKey());
+            _this.getView().getModel(sModel).setProperty(sRowPath + '/EDITED', true);
+        },
+
+        onValueHelpLiveInputChange: function(oEvent) {
+            console.log("onValueHelpLiveInputChange")
+            var oSource = oEvent.getSource();
+            var isInvalid = !oSource.getSelectedKey() && oSource.getValue().trim();
+            oSource.setValueState(isInvalid ? "Error" : "None");
+
+            if (!oSource.getSelectedKey()) {
+                oSource.getSuggestionItems().forEach(item => {
+                    if (item.getProperty("key") === oSource.getValue().trim()) {
+                        console.log("test2", item.getProperty("key"))
+                        isInvalid = false;
+                        oSource.setValueState(isInvalid ? "Error" : "None");
+                    }
+                })
+            }
+
+            this.addRemoveValueState(!isInvalid, oSource.getId());
+
+            var sRowPath = oSource.getBindingInfo("value").binding.oContext.sPath;
+            var sModel = oSource.getBindingInfo("value").parts[0].model;
+            var sColumn = oSource.getBindingInfo("value").parts[0].path;
+            this.getView().getModel(sModel).setProperty(sRowPath + '/' + sColumn, oSource.mProperties.selectedKey);
+            this.getView().getModel(sModel).setProperty(sRowPath + '/EDITED', true);
+        },
+
+        addRemoveValueState(pIsValid, pId) {
+            console.log("addRemoveValueState", this._aInvalidValueState, pIsValid, pId)
+            if (!pIsValid) {
+                if (!this._aInvalidValueState.includes(pId)) {
+                    this._aInvalidValueState.push(pId);
+                }
+            } else {
+                if (this._aInvalidValueState.includes(pId)) {
+                    for(var i = this._aInvalidValueState.length - 1; i >= 0; i--) {
+                        if (this._aInvalidValueState[i] == pId){
+                            this._aInvalidValueState.splice(i, 1)
+                        }
+                        
+                    }
+                }
+            }
         },
 
         onFilterBySmart(pModel, pFilters, pFilterGlobal, pFilterTab) {
@@ -350,7 +643,7 @@ sap.ui.define([
                     if (Object.keys(x).includes("aFilters")) {
                         x.aFilters.forEach(y => {
                             console.log("aFilters", y, this._aColumns[pModel])
-                            var sName = this._aColumns[pModel].filter(item => item.name.toUpperCase() == y.sPath.toUpperCase())[0].name;
+                            var sName = this._aColumns[pModel].filter(item => item.ColumnName.toUpperCase() == y.sPath.toUpperCase())[0].ColumnName;
                             aFilter.push(new Filter(sName, FilterOperator.Contains, y.oValue1));
 
                             //if (!aFilterCol.includes(sName)) aFilterCol.push(sName);
@@ -359,14 +652,14 @@ sap.ui.define([
                         aFilterGrp.push(oFilterGrp);
                         aFilter = [];
                     } else {
-                        var sName = this._aColumns[pModel].filter(item => item.name.toUpperCase() == x.sPath.toUpperCase())[0].name;
+                        var sName = this._aColumns[pModel].filter(item => item.ColumnName.toUpperCase() == x.sPath.toUpperCase())[0].ColumnName;
                         aFilter.push(new Filter(sName, FilterOperator.Contains, x.oValue1));
                         var oFilterGrp = new Filter(aFilter, false);
                         aFilterGrp.push(oFilterGrp);
                         aFilter = [];
                     }
                 });
-            } else {
+            } else if (pFilters.length > 0) {
                 var sName = pFilters[0].sPath;
                 aFilter.push(new Filter(sName, FilterOperator.EQ,  pFilters[0].oValue1));
                 var oFilterGrp = new Filter(aFilter, false);
@@ -376,9 +669,8 @@ sap.ui.define([
 
             if (pFilterGlobal) {
                 this._aColumns[pModel].forEach(item => {
-                    var sDataType = this._aColumns[pModel].filter(col => col.name === item.name)[0].type;
-                    if (sDataType === "Edm.Boolean") aFilter.push(new Filter(item.name, FilterOperator.EQ, pFilterGlobal));
-                    else aFilter.push(new Filter(item.name, FilterOperator.Contains, pFilterGlobal));
+                    if (item.DataType === "BOOLEAN") aFilter.push(new Filter(item.ColumnName, FilterOperator.EQ, pFilterGlobal));
+                    else aFilter.push(new Filter(item.ColumnName, FilterOperator.Contains, pFilterGlobal));
                 })
 
                 var oFilterGrp = new Filter(aFilter, false);
@@ -397,7 +689,7 @@ sap.ui.define([
         onFilterByCol(pModel, pFilterTab) {
             if (pFilterTab.length > 0) {
                 pFilterTab.forEach(item => {
-                    var iColIdx = _this._aColumns[pModel].findIndex(x => x.name == item.sPath);
+                    var iColIdx = _this._aColumns[pModel].findIndex(x => x.ColumnName == item.sPath);
                     _this.getView().byId(pModel + "Tab").filter(_this.getView().byId(pModel + "Tab").getColumns()[iColIdx], 
                         item.oValue1);
                 });
@@ -412,10 +704,11 @@ sap.ui.define([
             var aFilter = [];
 
             if (sQuery) {
-                this._aFilterableColumns[sTable].forEach(item => {
-                    var sDataType = this._aColumns[sTable].filter(col => col.name === item.name)[0].type;
-                    if (sDataType === "BOOLEAN") aFilter.push(new Filter(item.name, FilterOperator.EQ, sQuery));
-                    else aFilter.push(new Filter(item.name, FilterOperator.Contains, sQuery));
+                this._aColumns[sTable].forEach(item => {
+                    if (item.Visible) {
+                        if (item.DataType === "BOOLEAN") aFilter.push(new Filter(item.ColumnName, FilterOperator.EQ, sQuery));
+                        else aFilter.push(new Filter(item.ColumnName, FilterOperator.Contains, sQuery));
+                    }
                 })
 
                 oFilter = new Filter(aFilter, false);
@@ -455,6 +748,10 @@ sap.ui.define([
 
         formatDate(pDate) {
             return _sapDateFormat.format(new Date(pDate));
+        },
+
+        formatDatePH(pDate) {
+            return _sapDateFormatPH.format(new Date(pDate));
         },
 
         formatTime(pTime) {
@@ -527,6 +824,29 @@ sap.ui.define([
             }, 1);
         },
 
+        setActiveRowFocus(pModel) {
+            // Highligh first editable column on edit
+            var oTable = this.byId(pModel + "Tab");
+
+            setTimeout(() => {
+                var iActiveRowIndex = oTable.getModel(pModel).getData().results.findIndex(item => item.ACTIVE === "X");
+                var aRows = oTable.getRows();
+                var sInputId = ""
+
+                if (document.getElementsByClassName("sapMInputFocused").length > 0) {
+                    sInputId = document.getElementsByClassName("sapMInputFocused")[0].id;
+                } else {
+                    var oCell = aRows[iActiveRowIndex].getCells().filter(x => x.sId.includes("input"))[0];
+                    sInputId = oCell.sId;
+                }
+
+                //var sColumn = _this._aColumns[pModel].filter(x => x.updatable == true)[0]["name"];
+                
+                //oCell.focus();
+                document.getElementById(sInputId + "-inner").select();
+            }, 1);
+        },
+
         onCellClick: function(oEvent) {
             if (oEvent.getParameters().rowBindingContext) {
                 var oTable = oEvent.getSource();
@@ -545,296 +865,65 @@ sap.ui.define([
             }
         },
 
-        createViewSettingsDialog: function (pType, pProps) {
-            var sDialogFragmentName = null;
+        setReqColHdrColor(pModel) {
+            var oTable = this.byId(pModel + "Tab");
 
-            if (pType === "sort") sDialogFragmentName = "zuimrp.view.fragments.dialog.SortDialog";
-            else if (pType === "filter") sDialogFragmentName = "zuimrp.view.fragments.dialog.FilterDialog";
-            else if (pType === "column") sDialogFragmentName = "zuimrp.view.fragments.dialog.ColumnDialog";
+            oTable.getColumns().forEach((col, idx) => {
+                if (col.getLabel().getText().includes("*")) {
+                    col.getLabel().setText(col.getLabel().getText().replaceAll("*", ""));
+                }   
 
-            var oViewSettingsDialog = this._oViewSettingsDialog[sDialogFragmentName];
-
-            if (!oViewSettingsDialog) {
-                oViewSettingsDialog = sap.ui.xmlfragment(sDialogFragmentName, this);
-                
-                if (Device.system.desktop) {
-                    oViewSettingsDialog.addStyleClass("sapUiSizeCompact");
-                }
-
-                oViewSettingsDialog.setModel(pProps);
-
-                this._oViewSettingsDialog[sDialogFragmentName] = oViewSettingsDialog;
-                this.getView().addDependent(oViewSettingsDialog);
-            }
-        },
-
-        onColumnProp: function(oEvent) {
-            var aColumns = [];
-            var oTable = oEvent.getSource().oParent.oParent;
-            
-            oTable.getColumns().forEach(col => {
-                aColumns.push({
-                    name: col.getProperty("sortProperty"), 
-                    label: col.getLabel().getText(),
-                    position: col.getIndex(), 
-                    selected: col.getProperty("visible")
-                });
-            })
-            
-            var oDialog = _this._oViewSettingsDialog["zuimrp.view.fragments.dialog.ColumnDialog"];
-            oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
-            oDialog.getModel().setProperty("/items", aColumns);
-            oDialog.getModel().setProperty("/rowCount", aColumns.length);
-            oDialog.open();
-        },
-
-        beforeOpenColProp: function(oEvent) {
-            oEvent.getSource().getModel().getData().items.forEach(item => {
-                if (item.selected) {
-                    oEvent.getSource().getContent()[0].addSelectionInterval(item.position, item.position);
-                }
-                else {
-                    oEvent.getSource().getContent()[0].removeSelectionInterval(item.position, item.position);
-                }
-            })
-        },            
-
-        onColumnPropConfirm: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.ColumnDialog"];
-            var oDialogTable = oDialog.getContent()[0];
-            var aSelRows = oDialogTable.getSelectedIndices();
-
-            if (aSelRows.length === 0) {
-                oDialog.close();
-            }
-            else {
-                oDialog.close();
-                var sTable = oDialog.getModel().getData().table;
-                var oTable = this.byId(sTable + "Tab");
-                var oColumns = oTable.getColumns();
-
-                oColumns.forEach(col => {
-                    if (aSelRows.filter(item => item === col.getIndex()).length === 0) {
-                        col.setVisible(false);
-                    }
-                    else col.setVisible(true);
-                })
-            }
-        },
-
-        onColumnPropCancel: function(oEvent) {
-            this._oViewSettingsDialog["zuimrp.view.fragments.dialog.ColumnDialog"].close();
-        },
-
-        onSorted: function(oEvent) {
-            var sColumnName = oEvent.getParameters().column.getProperty("sortProperty");
-            var sSortOrder = oEvent.getParameters().sortOrder;
-            var bMultiSort = oEvent.getParameters().columnAdded;
-            var oSortData = this._aSortableColumns[oEvent.getSource().getBindingInfo("rows").model];
-
-            if (!bMultiSort) {
-                oSortData.forEach(item => {
-                    if (item.name === sColumnName) {
-                        item.sorted = true;
-                        item.sortOrder = sSortOrder;
-                    }
-                    else {
-                        item.sorted = false;
-                    } 
-                })
-            }
-        },
-
-        onColSort: function(oEvent) {
-            var oTable = oEvent.getSource().oParent.oParent;               
-            var aSortableColumns = this._aSortableColumns[oTable.getBindingInfo("rows").model];
-
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];
-            oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
-            oDialog.getModel().setProperty("/items", aSortableColumns);
-            oDialog.getModel().setProperty("/rowCount", aSortableColumns.length);
-            oDialog.open();
-        },
-
-        beforeOpenColSort: function(oEvent) {
-            oEvent.getSource().getContent()[0].removeSelectionInterval(0, oEvent.getSource().getModel().getData().items.length - 1);
-            oEvent.getSource().getModel().getData().items.forEach(item => {
-                if (item.sorted) {                       
-                    oEvent.getSource().getContent()[0].addSelectionInterval(item.position, item.position);
-                }
+                this._aColumns[pModel].filter(item => item.ColumnLabel === col.getLabel().getText())
+                    .forEach(ci => {
+                        if (ci.Mandatory) {
+                            col.getLabel().removeStyleClass("sapMLabelRequired");
+                            col.getLabel().removeStyleClass("requiredField");
+                        }
+                    })
             })
         },
 
-        onColSortConfirm: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];
-            oDialog.close();
+        //******************************************* */
+        // Column Filtering
+        //******************************************* */
 
-            var sTable = oDialog.getModel().getData().table;
-            var oTable = this.byId(sTable + "Tab");
-            var oDialogData = oDialog.getModel().getData().items;
-            var oDialogTable = oDialog.getContent()[0];
-            var aSortSelRows = oDialogTable.getSelectedIndices();
-
-            oDialogData.forEach(item => item.sorted = false);
-
-            if (aSortSelRows.length > 0) {
-                oDialogData.forEach((item, idx) => {
-                    if (aSortSelRows.filter(si => si === idx).length > 0) {
-                        var oColumn = oTable.getColumns().filter(col => col.getProperty("sortProperty") === item.name)[0];
-                        oTable.sort(oColumn, item.sortOrder === "Ascending" ? SortOrder.Ascending : SortOrder.Descending, true);
-                        item.sorted = true;
-                    }
-                })
-            }
-
-            this._aSortableColumns[sTable] = oDialogData;
-        },
-
-        onColSortCancel: function(oEvent) {
-            this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"].close();
-        },
-
-        onColFilter: function(oEvent) {
-            var oTable = oEvent.getSource().oParent.oParent               
-            var aFilterableColumns = this._aFilterableColumns[oTable.getBindingInfo("rows").model];
-
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.FilterDialog"];
-            oDialog.getModel().setProperty("/table", oTable.getBindingInfo("rows").model);
-            oDialog.getModel().setProperty("/items", aFilterableColumns);
-            oDialog.getModel().setProperty("/rowCount", aFilterableColumns.length);
-            oDialog.open();
-        },
-
-        onColFilterConfirm: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.FilterDialog"];
-            oDialog.close();
-
-            var bFilter = false;
-            var aFilter = [];
-            var oFilter = null;
-            var sTable = oDialog.getModel().getData().table;
-            var oDialogData = oDialog.getModel().getData().items;
-
-            oDialogData.forEach(item => {
-                if (item.value !== "") {
-                    bFilter = true;
-                    aFilter.push(new Filter(item.name, this.getConnector(item.connector), item.value))
-                }
-            })
-            
-            if (bFilter) {
-                oFilter = new Filter(aFilter, true);
-                this.getView().byId("btnFilterGMC").addStyleClass("activeFiltering");
-            }
-            else {
-                oFilter = "";
-                this.getView().byId("btnFilterGMC").removeStyleClass("activeFiltering");
-            }
-
-            this.byId(sTable + "Tab").getBinding("rows").filter(oFilter, "Application");
-            this._aFilterableColumns[sTable] = oDialogData;
-        },
-
-        getConnector(args) {
-            var oConnector;
-
-            switch (args) {
-                case "EQ":
-                    oConnector = sap.ui.model.FilterOperator.EQ
-                    break;
-                  case "Contains":
-                    oConnector = sap.ui.model.FilterOperator.Contains
-                    break;
-                  default:
-                    // code block
-                    break;
-            }
-
-            return oConnector;
+        onColFilterClear: function(oEvent) {
+            console.log("onColFilterClear")
+            TableFilter.onColFilterClear(oEvent, this);
         },
 
         onColFilterCancel: function(oEvent) {
-            this._oViewSettingsDialog["zuimrp.view.fragments.dialog.FilterDialog"].close();
+            console.log("onColFilterCancel")
+            TableFilter.onColFilterCancel(oEvent, this);
         },
 
-        onColSortCellClick: function (oEvent) {
-            this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"].getModel().setProperty("/activeRow", (oEvent.getParameters().rowIndex));
+        onColFilterConfirm: function(oEvent) {
+            console.log("onColFilterConfirm")
+            TableFilter.onColFilterConfirm(oEvent, this);
         },
 
-        onColSortSelectAll: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];               
-            oDialog.getContent()[0].addSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
+        onFilterItemPress: function(oEvent) {
+            TableFilter.onFilterItemPress(oEvent, this);
         },
 
-        onColSortDeSelectAll: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];               
-            oDialog.getContent()[0].removeSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
+        onFilterValuesSelectionChange: function(oEvent) {
+            TableFilter.onFilterValuesSelectionChange(oEvent, this);
         },
 
-        onColSortRowFirst: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];
-            var iActiveRow = oDialog.getModel().getData().activeRow;
-
-            var oDialogData = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"].getModel().getData().items;
-            oDialogData.filter((item, index) => index === iActiveRow)
-                .forEach(item => item.position = 0);
-            oDialogData.filter((item, index) => index !== iActiveRow)
-                .forEach((item, index) => item.position = index + 1);
-            oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-            oDialog.getModel().setProperty("/items", oDialogData);
-            oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
+        onSearchFilterValue: function(oEvent) {
+            TableFilter.onSearchFilterValue(oEvent, this);
         },
 
-        onColSortRowUp: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];
-            var iActiveRow = oDialog.getModel().getData().activeRow;
-
-            var oDialogData = oDialog.getModel().getData().items;
-            oDialogData.filter((item, index) => index === iActiveRow).forEach(item => item.position = iActiveRow - 1);
-            oDialogData.filter((item, index) => index === iActiveRow - 1).forEach(item => item.position = item.position + 1);
-            oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-            oDialog.getModel().setProperty("/items", oDialogData);
-            oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
+        onCustomColFilterChange: function(oEvent) {
+            TableFilter.onCustomColFilterChange(oEvent, this);
         },
 
-        onColSortRowDown: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];
-            var iActiveRow = oDialog.getModel().getData().activeRow;
-
-            var oDialogData = oDialog.getModel().getData().items;
-            oDialogData.filter((item, index) => index === iActiveRow).forEach(item => item.position = iActiveRow + 1);
-            oDialogData.filter((item, index) => index === iActiveRow + 1).forEach(item => item.position = item.position - 1);
-            oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-            oDialog.getModel().setProperty("/items", oDialogData);
-            oDialog.getModel().setProperty("/activeRow", iActiveRow + 1);
+        onSetUseColFilter: function(oEvent) {
+            TableFilter.onSetUseColFilter(oEvent, this);
         },
 
-        onColSortRowLast: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.SortDialog"];
-            var iActiveRow = oDialog.getModel().getData().activeRow;
-
-            var oDialogData = oDialog.getModel().getData().items;
-            oDialogData.filter((item, index) => index === iActiveRow)
-                .forEach(item => item.position = oDialogData.length - 1);
-                oDialogData.filter((item, index) => index !== iActiveRow)
-                .forEach((item, index) => item.position = index);
-                oDialogData.sort((a,b) => (a.position > b.position ? 1 : -1));
-
-            oDialog.getModel().setProperty("/items", oDialogData);
-            oDialog.getModel().setProperty("/activeRow", iActiveRow - 1);
-        },
-
-        onColPropSelectAll: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.ColumnDialog"];               
-            oDialog.getContent()[0].addSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
-        },
-
-        onColPropDeSelectAll: function(oEvent) {
-            var oDialog = this._oViewSettingsDialog["zuimrp.view.fragments.dialog.ColumnDialog"];               
-            oDialog.getContent()[0].removeSelectionInterval(0, oDialog.getModel().getData().rowCount - 1);
+        onRemoveColFilter: function(oEvent) {
+            TableFilter.onRemoveColFilter(oEvent, this);
         },
     });
    

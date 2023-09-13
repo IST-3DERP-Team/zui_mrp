@@ -24,37 +24,37 @@
                 <sfb:SmartFilterBar id="sfbMRP" entitySet="ZVB_3DERP_MRPFILTER" enableBasicSearch="true" search="onSearchMrpHdr" 
                     persistencyKey="3DERP_MRPKey" filterContainerWidth="14rem" useToolbar="true" showClearOnFB="true" initialise="onSFBInitialise">
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="{ddtext>/PLANTCD}" controlType="dropDownList" 
+                        <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="{caption>/PLANTCD}" controlType="dropDownList" 
                             displayBehaviour="idAndDescription" mandatory="mandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterPurchGrp" key="PURCHGRP" groupId="_BASIC" label="{ddtext>/PURCHGRP}" controlType="dropDownList" 
+                        <sfb:ControlConfiguration id="filterPurchGrp" key="PURCHGRP" groupId="_BASIC" label="{caption>/PURCHGRP}" controlType="dropDownList" 
                             displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{ddtext>/IONO}"
+                        <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{caption>/IONO}"
                             preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterMatType" key="MATTYPE" groupId="_BASIC" label="{ddtext>/MATTYPE}" controlType="dropDownList" 
+                        <sfb:ControlConfiguration id="filterMatType" key="MATTYPE" groupId="_BASIC" label="{caption>/MATTYPE}" controlType="dropDownList" 
                             displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="{ddtext>/MATGRP}" controlType="dropDownList" 
+                        <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="{caption>/MATGRP}" controlType="dropDownList" 
                             displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="{ddtext>/CUSTGRP}" controlType="dropDownList" 
+                        <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="{caption>/CUSTGRP}" controlType="dropDownList" 
                             displayBehaviour="idAndDescription" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
                     <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterMatNo" key="MATNO" groupId="_BASIC" label="{ddtext>/MATNO}"
+                        <sfb:ControlConfiguration id="filterMatNo" key="MATNO" groupId="_BASIC" label="{caption>/MATNO}"
                             preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idOnly" mandatory="notMandatory">
                         </sfb:ControlConfiguration>
                     </sfb:controlConfiguration>
@@ -83,48 +83,31 @@
                     rowSelectionChange="onRowSelectionChangeMrpHdr">
                     <uiT:extension>
                         <Toolbar>
-                            <Text text="{ui>/rowCountMrpHdr} {ddtext>/ROWS}" />
+                            <Text text="{ui>/rowCountMrpHdr} {caption>/ROWS}" />
                             <ToolbarSpacer/>
-                            <!-- <SearchField
-                                id="searchFieldMrpHdr"
-                                placeholder="Filter"
-                                value=""
-                                search="filterGlobally"
-                                width="15rem"/> -->
-                            <!-- <ToolbarSeparator/> -->
                             <Button id="btnCancelMrpHdr" 
                                 icon="sap-icon://sys-cancel"
-                                text="{ddtext>/CANCELMRP}"
+                                text="{caption>/CANCELMRP}"
                                 press="onCancelMrpHdr()"
                                 visible="true"/>
                             <Button id="btnReserveMrpHdr" 
                                 icon="sap-icon://basket"
-                                text="{ddtext>/RESERVE}"
+                                text="{caption>/RESERVE}"
                                 press="onReserveMrpHdr(false)"
                                 visible="false"/>
                             <Button id="btnResetMrpHdr" 
                                 icon="sap-icon://reset"
-                                text="{ddtext>/RESET}"
+                                text="{caption>/RESET}"
                                 press="onResetMrpHdr"
                                 visible="true"/>
                             <Button id="btnExecuteMrpHdr" 
                                 icon="sap-icon://feeder-arrow"
-                                text="{ddtext>/EXECUTE}"
+                                text="{caption>/EXECUTE}"
                                 press="onExecuteMrpHdr" 
-                                visible="true" />
-                            <!-- <Button id="btnRefreshMrpHdr" 
-                                icon="sap-icon://refresh"
-                                text="Refresh"
-                                press="onRefreshMrpHdr"
-                                visible="true"/> -->
-                            <Button id="btnColPropMrpHdr" 
-                                icon="sap-icon://table-column"
-                                press="onColumnProp"
-                                tooltip="{ddtext>/COLUMNS}"
                                 visible="true" />
                             <Button id="btnTabLayoutMrpHdr"
                                 icon="sap-icon://grid" 
-                                tooltip="{ddtext>/SAVELAYOUT}" 
+                                tooltip="{caption>/SAVELAYOUT}" 
                                 press="onSaveTableLayout"
                                 visible="true" />
                         </Toolbar>
@@ -158,36 +141,31 @@
                     rowSelectionChange="onRowSelectionChangeMrpDtl">
                     <uiT:extension>
                         <Toolbar>
-                            <Text text="{ui>/rowCountMrpDtl} {ddtext>/ROWS}" />
+                            <Text text="{ui>/rowCountMrpDtl} {caption>/ROWS}" />
                             <ToolbarSpacer/>
                             <Button id="btnEditMrpDtl"
                                 icon="sap-icon://edit"
-                                text="{ddtext>/EDIT}"
+                                text="{caption>/EDIT}"
                                 press="onEditMrpDtl"
                                 visible="true"/>
                             <Button id="btnSaveMrpDtl" 
                                 icon="sap-icon://save"
-                                text="{ddtext>/SAVE}"
+                                text="{caption>/SAVE}"
                                 press="onSaveMrpDtl" 
                                 visible="false" />
                             <Button id="btnCancelMrpDtl" 
                                 icon="sap-icon://sys-cancel"
-                                text="{ddtext>/CANCEL}"
+                                text="{caption>/CANCEL}"
                                 press="onCancelMrpDtl" 
                                 visible="false" />                                        
                             <Button id="btnRefreshMrpDtl" 
                                 icon="sap-icon://refresh"
-                                text="{ddtext>/REFRESH}"
+                                text="{caption>/REFRESH}"
                                 press="onRefreshMrpDtl"
                                 visible="false"/> 
-                            <Button id="btnColPropMrpDtl" 
-                                icon="sap-icon://table-column"
-                                press="onColumnProp"
-                                tooltip="{ddtext>/COLUMNS}"
-                                visible="true" />
                             <Button id="btnTabLayoutMrpDtl"
                                 icon="sap-icon://grid" 
-                                tooltip="{ddtext>/SAVELAYOUT}"
+                                tooltip="{caption>/SAVELAYOUT}"
                                 press="onSaveTableLayout"
                                 visible="true" />
                         </Toolbar>

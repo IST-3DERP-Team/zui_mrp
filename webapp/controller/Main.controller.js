@@ -1,33 +1,32 @@
 sap.ui.define([
     "./BaseController",
     "sap/ui/model/json/JSONModel",
-    "sap/m/MessageBox",
-    "sap/ui/model/Filter",
-	"sap/ui/model/FilterOperator",
-    'sap/ui/model/Sorter',
-    "sap/ui/Device",
-    "sap/ui/table/library",
-    "sap/m/TablePersoController",
-    'sap/m/MessageToast',
-	'sap/m/SearchField'
+    "sap/m/MessageBox"
 ],
     /**
      * @param {typeof sap.ui.core.mvc.Controller} Controller
      */
-    function (BaseController, JSONModel, MessageBox, Filter, FilterOperator, Sorter, Device, library, TablePersoController, MessageToast, SearchField) {
+    function (BaseController, JSONModel, MessageBox) {
         "use strict";
 
         var _this;
-        var _startUpInfo;
+        var _oCaption = {};
+        var _aSmartFilter;
+        var _sSmartFilterGlobal;
+        var _aTableProp = [];
+        var _startUpInfo = {};
         var _aReserveList = [];
         var _aForMrList = [];
-        var _oCaption = {};
 
         return BaseController.extend("zuimrp.controller.Main", {
             onInit: function () {
                 _this = this;
 
                 _this.getCaption();
+
+                var oModel = this.getOwnerComponent().getModel("MRPFilters");
+                var oSmartFilter = this.getView().byId("sfbMRP");
+                oSmartFilter.setModel(oModel);
 
                 _this.initializeComponent();
             },
@@ -55,65 +54,55 @@ sap.ui.define([
                     rowCountMrpDtl: "0"
                 }), "ui");
 
-                var oModelStartUp= new sap.ui.model.json.JSONModel();
-                oModelStartUp.loadData("/sap/bc/ui2/start_up").then(() => {
-                    _startUpInfo = oModelStartUp.oData;
-                });
-
                 this.onInitBase(_this, _this.getView().getModel("ui").getData().sbu);
+                this.getAppAction();
+
+                if (sap.ushell.Container) {
+                    var oModelStartUp= new sap.ui.model.json.JSONModel();
+                    oModelStartUp.loadData("/sap/bc/ui2/start_up").then(() => {
+                        _startUpInfo = oModelStartUp.oData;
+                    });
+                }
+                else {
+                    _startUpInfo.id = "BAS_CONN";
+                }
+
+                setTimeout(() => {
+                    var bAppChange = _this.getView().getModel("base").getProperty("/appChange");
+                    _this.setControlAppAction(bAppChange);
+                }, 100);
+
                 _this.showLoadingDialog("Loading...");
 
-                var aTableList = [];
-                aTableList.push({
+                _aTableProp.push({
                     modCode: "MRPMOD",
                     tblSrc: "ZDV_3DERP_MRPHDR",
                     tblId: "mrpHdrTab",
                     tblModel: "mrpHdr"
                 });
 
-                aTableList.push({
+                _aTableProp.push({
                     modCode: "MRPDTLMOD",
                     tblSrc: "ZDV_MRPDTL",
                     tblId: "mrpDtlTab",
                     tblModel: "mrpDtl"
                 });
 
-                _this.getColumns(aTableList);
-                
-                _this._oDataBeforeChange = {};
+                _this.getColumns(_aTableProp);
 
-                // Add header search field
-                var oSmartFilter = this.getView().byId("sfbMRP");
-                if (oSmartFilter) {
-                    oSmartFilter.attachFilterChange(function(oEvent) {});
-
-                    // var oBasicSearchField = new SearchField();
-                    // oBasicSearchField.attachLiveChange(function(oEvent) {
-                    //     this.getView().byId("sfbMRP").fireFilterChange(oEvent);
-                    // }.bind(this));
-
-                    // oSmartFilter.setBasicSearch(oBasicSearchField);
+                var aSmartFilter = this.getView().byId("sfbMRP").getFilters();
+                if (aSmartFilter.length == 0) {
+                    // Disable all buttons
+                    this.byId("btnCancelMrpHdr").setEnabled(false);
+                    this.byId("btnResetMrpHdr").setEnabled(false);
+                    this.byId("btnExecuteMrpHdr").setEnabled(false);
+                    this.byId("btnTabLayoutMrpHdr").setEnabled(false);
+                    this.byId("btnEditMrpDtl").setEnabled(false);
+                    this.byId("btnRefreshMrpDtl").setEnabled(false);
+                    this.byId("btnTabLayoutMrpDtl").setEnabled(false);
                 }
 
-                var oModel = this.getOwnerComponent().getModel("MRPFilters");
-                oSmartFilter.setModel(oModel);
-
-                // Disable all buttons
-                this.byId("btnCancelMrpHdr").setEnabled(false);
-                this.byId("btnReserveMrpHdr").setEnabled(false);
-                this.byId("btnResetMrpHdr").setEnabled(false);
-                this.byId("btnExecuteMrpHdr").setEnabled(false);
-                this.byId("btnColPropMrpHdr").setEnabled(false);
-                this.byId("btnTabLayoutMrpHdr").setEnabled(false);
-                this.byId("btnEditMrpDtl").setEnabled(false);
-                this.byId("btnColPropMrpDtl").setEnabled(false);
-                this.byId("btnTabLayoutMrpDtl").setEnabled(false);
-
-                this.getView().setModel(new JSONModel({
-                    results:[]
-                }), "mrpDtl");
-
-                this._tableRendered = "";
+                _this._tableRendered = "";
                 var oTableEventDelegate = {
                     onkeyup: function(oEvent){
                         _this.onKeyUp(oEvent);
@@ -125,6 +114,7 @@ sap.ui.define([
                 };
 
                 this.byId("mrpHdrTab").addEventDelegate(oTableEventDelegate);
+                this.byId("mrpDtlTab").addEventDelegate(oTableEventDelegate);
 
                 _this.closeLoadingDialog();
             },
@@ -154,7 +144,7 @@ sap.ui.define([
                                 _this.getView().byId("filterPlant").setFilterType("single");
                             }
 
-                            _this.closeLoadingDialog();                         
+                            //_this.closeLoadingDialog();                         
                         }
                     },
                     error: function (err) { 
@@ -169,22 +159,22 @@ sap.ui.define([
                 _aReserveList = [];
                 _aForMrList = [];
 
-                var aFilters = this.getView().byId("sfbMRP").getFilters();
-                var sFilterGlobal = "";
-                if (oEvent) sFilterGlobal = oEvent.getSource()._oBasicSearchField.mProperties.value;
+                var aSmartFilter = this.getView().byId("sfbMRP").getFilters();
+                var sSmartFilterGlobal = "";
+                if (oEvent) sSmartFilterGlobal = oEvent.getSource()._oBasicSearchField.mProperties.value;
                 
-                this.getMrpHdr(aFilters, sFilterGlobal);
+                this.getMrpHdr(aSmartFilter, sSmartFilterGlobal);
                 this.getProcurePlant();
 
                 this.byId("btnCancelMrpHdr").setEnabled(true);
-                this.byId("btnReserveMrpHdr").setEnabled(true);
+                // this.byId("btnReserveMrpHdr").setEnabled(true);
                 this.byId("btnResetMrpHdr").setEnabled(true);
                 this.byId("btnExecuteMrpHdr").setEnabled(true);
-                this.byId("btnColPropMrpHdr").setEnabled(true);
+                // this.byId("btnColPropMrpHdr").setEnabled(true);
                 this.byId("btnTabLayoutMrpHdr").setEnabled(true);
                 this.byId("btnEditMrpDtl").setEnabled(true);
                 // this.byId("btnRefreshMrpDtl").setEnabled(true);
-                this.byId("btnColPropMrpDtl").setEnabled(true);
+                // this.byId("btnColPropMrpDtl").setEnabled(true);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(true);
             },
 
@@ -217,7 +207,8 @@ sap.ui.define([
                             _this.getView().setModel(oJSONModel, "mrpHdr");
                             _this._tableRendered = "mrpHdrTab";
 
-                            _this.onFilterBySmart("mrpHdr", pFilters, pFilterGlobal, aFilterTab);
+                            //_this.onFilterBySmart("mrpHdr", pFilters, pFilterGlobal, aFilterTab);
+                            _this.onFilterByCol("mrpHdr", aFilterTab);
 
                             _this.getView().getModel("ui").setProperty("/activeTransNo", data.results[0].TRANSNO);
                             _this.getView().getModel("ui").setProperty("/activeTransItm", data.results[0].TRANSITM);
@@ -570,113 +561,6 @@ sap.ui.define([
                 }
             },
 
-            // onReserveMrpHdr(pAuto) {
-            //     this.showLoadingDialog("Loading...");
-
-            //     var oTable = this.byId("mrpHdrTab");
-            //     var aSelIdx = [];
-            //     var aData = [];
-
-            //     if (pAuto) {
-            //         var iRowCount = oTable.getBinding("rows").aIndices.length;
-            //         for (var i = 0; i < iRowCount; i++) {
-            //             aSelIdx.push(i);
-            //         }
-            //     } else {
-            //         aSelIdx = oTable.getSelectedIndices();
-            //     }
-                
-            //     aSelIdx.forEach(item => {
-            //         var sPath = (oTable.getContextByIndex(item)).sPath;
-            //         var oRowData = this.getView().getModel("mrpHdr").getProperty(sPath);
-            //         if (aData.filter(x => x.PLANTCD == oRowData.PLANTCD && x.MATNO == oRowData.MATNO).length == 0) {
-            //             aData.push(oRowData);
-            //         }
-
-            //         this.getView().getModel("mrpHdr").setProperty(sPath + "/RESERVED", true);
-            //     });
-
-            //     if (aData.length > 0) {
-            //         // Filter MRP Header
-            //         var aDataMrpHdr = this.getView().getModel("mrpHdr").getData().results.filter(item => item.RESERVED === true);
-            //         // this.getView().getModel("mrpHdr").setProperty("/results", aDataMrpHdr);
-            //         // oTable.clearSelection();
-
-            //         // this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
-            //         // this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
-            //         // this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
-            //         // this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
-            //         // this.getView().getModel("ui").setProperty("/activeHdrRowPath", '/results/0');
-
-            //         var oModel = this.getOwnerComponent().getModel();
-            //         var oEntitySet = "/MRPDetailViewSet";
-            //         var oJSONModel = new sap.ui.model.json.JSONModel();
-    
-            //         _aReserveList = [];
-            //         _aForMrList = [];
-            //         aData.forEach((item, idx) => {
-            //             //console.log("adata", item)
-            //             oModel.read(oEntitySet, {
-            //                 urlParameters: {
-            //                     "$filter": "PLANTCD eq '" + item.PLANTCD + "' and HDRMATNO eq '" + item.MATNO + "'"
-            //                 },
-            //                 success: function (data, response) {
-            //                     //console.log("MRPDetailViewSet", data);
-                                
-            //                     _aReserveList.push(...data.results);
-
-            //                     if (idx == aData.length - 1) {
-            //                         var aMrpDtl = {results:[]};
-            //                         var aReserveList = jQuery.extend(true, [], _aReserveList);
-
-            //                         var sTransNo = _this.getView().getModel("ui").getProperty("/activeTransNo");
-            //                         var sTransItm = _this.getView().getModel("ui").getProperty("/activeTransItm");
-            //                         var oMrpHdr = aDataMrpHdr.filter(x => x.TRANSNO == sTransNo && x.TRANSITM == sTransItm)[0];
-            //                         var sPlantCd = oMrpHdr.PLANTCD;
-            //                         var sMatNo = oMrpHdr.MATNO;
-
-            //                         // Highlight header rows with details
-            //                         aDataMrpHdr.forEach(item => {
-            //                             if (aReserveList.filter(x => x.PLANTCD == item.PLANTCD && x.HDRMATNO == item.MATNO).length > 0) {
-                                            
-            //                                 var aDataMrpHdrAll = jQuery.extend(true, [], 
-            //                                     _this.getView().getModel("mrpHdr").getData().results);
-            //                                 var iIdx = aDataMrpHdrAll.findIndex(
-            //                                     x => x.TRANSNO == item.TRANSNO && x.TRANSITM == item.TRANSITM
-            //                                 );
-
-            //                                 if (iIdx >= 0) {
-            //                                     _this.getView().getModel("mrpHdr").setProperty("/results/" + 
-            //                                     iIdx.toString() + "/WITHRESERVED", true);
-            //                                 }
-            //                             }
-            //                         })
-
-            //                         aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.HDRMATNO == sMatNo));
-            //                         oJSONModel.setData(aMrpDtl);
-            //                         _this.getView().setModel(oJSONModel, "mrpDtl");
-            //                         _this._tableRendered = "mrpDtlTab";
-            //                         _this.getView().getModel("ui").setProperty("/rowCountMrpDtl", aMrpDtl.results.length.toString());
-
-            //                         if (_aReserveList.length == 0 && pAuto == false) {
-            //                             MessageBox.information(_oCaption.INFO_NO_DATA_GENERATED);
-            //                         }
-            //                     }
-
-            //                     _this.closeLoadingDialog();
-            //                 },
-            //                 error: function (err) { 
-            //                     console.log("error", err)
-            //                     _this.closeLoadingDialog();
-            //                 }
-            //             })
-            //         })
-            //     } else {
-            //         MessageBox.information(_oCaption.INFO_NO_SELECTED);
-            //         _this.closeLoadingDialog();
-            //     }
-            // },
-
             onResetMrpHdr() {
                 if (_this.getView().getModel("mrpDtl")) {
                     MessageBox.confirm(_oCaption.CONFIRM_PROCEED_RESET_MRP, {
@@ -854,111 +738,13 @@ sap.ui.define([
                                         _this.closeLoadingDialog();
                                     }
                                 });
-                                
-                                /* Remove CreateBatchSeq 12/23/2022
-                                var oParam = {};
-                                var oParamSeq = {};
-                                var oModel = _this.getOwnerComponent().getModel("ZGW_3DERP_RFC_SRV");
-
-                                oParamSeq["N_ImBatchTab"] = aImBatchTab;
-                                oParamSeq["N_MatBatchTab"] = []
-                                oParamSeq["N_ExReturnTab"] = [];
-
-                                console.log("CreateBatchSeq param", oParamSeq)
-                                oModel.create("/CreateBatchSeqSet", oParamSeq, {
-                                    method: "POST",
-                                    success: function(oResult, oResponse) {
-                                        console.log("CreateBatchSeqSet", oResult);
-                                        oResult["N_MatBatchTab"].results.forEach((itemBatch, itemIdx) => {
-                                            aMrTab[itemIdx].Rcvbatch = itemBatch.Batch;
-                                        })
-
-                                        oParam["N_IOMrp_Imp_Mrtab"] = aMrTab;
-                                        oParam["N_IOMrp_Imp_Prtab"] = aPrTab;
-                                        oParam["N_IOMrp_Exp_Mrtab"] = [];
-                                        oParam["N_IOMrp_Exp_Prtab"] = [];
-                                        oParam["N_IOMrp_Exp_Retmsg"] = [];
-
-                                        console.log("onExecuteMrpHdr param", oParam)
-                                        oModel.create("/EMrtabSet", oParam, {
-                                            method: "POST",
-                                            success: function(oResult, oResponse) {
-                                                console.log("onExecuteMrpHdr", oResult);
-                                                var aMRCreated = [];
-                                                var aPRCreated = [];
-                                                var sMessage = "";
-
-                                                oResult.N_IOMrp_Exp_Mrtab.results.forEach(item => {
-                                                    if (item.Rsvno && !aMRCreated.includes(item.Rsvno)) aMRCreated.push(item.Rsvno);
-                                                })
-
-                                                oResult.N_IOMrp_Exp_Prtab.results.forEach(item => {
-                                                    if (item.PreqNo && !aPRCreated.includes(item.PreqNo)) aPRCreated.push(item.PreqNo);
-                                                })
-
-                                                if (aMRCreated.length > 0) {
-                                                    sMessage += "Below are successfully created MR: \n";
-                                                    aMRCreated.forEach(item => {
-                                                        sMessage += item + "\n";
-                                                    })
-                                                }
-
-                                                if (aPRCreated.length > 0) {
-                                                    sMessage += "Below are successfully created PR: \n";
-                                                    aPRCreated.forEach(item => {
-                                                        sMessage += item + "\n";
-                                                    })
-                                                }
-
-                                                if (sMessage.length == 0) {
-                                                    oResult.N_IOMrp_Exp_Retmsg.results.forEach(item => {
-                                                        if (item.Message) sMessage += item.Message + "\n";
-                                                    })
-                                                }
-
-                                                //MessageBox.information(_oCaption.INFO_EXECUTE_SUCCESS);
-                                                MessageBox.information(sMessage);
-
-                                                _this.getView().getModel("mrpDtl").setProperty("/results", []);
-                                                _this.onSearchMrpHdr();
-                                                _aReserveList = [];
-                                                _aForMrList = [];
-                                            },
-                                            error: function(err) {
-                                                MessageBox.error(_oCaption.INFO_EXECUTE_FAIL);
-                                                console.log("error", err);
-                                                _this.closeLoadingDialog();
-                                            }
-                                        });
-
-                                        _this.closeLoadingDialog();
-                                    },
-                                    error: function(err) {
-                                        MessageBox.error(_oCaption.INFO_EXECUTE_FAIL);
-                                        console.log("error", err);
-                                    }
-                                });
-                                */
                             }
                         }
                     });
-
-                    
-                // } else if (_aForMrList.length == 0) {
-                //     MessageBox.warning(_oCaption.INFO_NO_DATA_EXEC);
-                //     _this.closeLoadingDialog();
                 } else {
                     MessageBox.warning(_oCaption.INFO_NO_SELECTED);
                     _this.closeLoadingDialog();
                 }
-            },
-
-            onAfterTableRendering: function(oEvent) {
-                console.log(this._tableRendered)
-                if (this._tableRendered !== "") {
-                    this.setActiveRowHighlight(this._tableRendered.replace("Tab", ""));
-                    this._tableRendered = "";
-                } 
             },
 
             onEditMrpDtl() {
@@ -1185,6 +971,19 @@ sap.ui.define([
                 //this.onReserveMrpHdr()();
             },
 
+            setControlAppAction(pChange) {
+                // Header
+                this.byId("btnCancelMrpHdr").setVisible(pChange);
+                this.byId("btnResetMrpHdr").setVisible(pChange);
+                this.byId("btnExecuteMrpHdr").setVisible(pChange);
+                this.byId("btnTabLayoutMrpHdr").setVisible(true);
+
+                // Detail
+                this.byId("btnEditMrpDtl").setVisible(pChange);
+                //this.byId("btnRefreshMrpDtl").setVisible(true);
+                this.byId("btnTabLayoutMrpDtl").setVisible(true);
+            },
+
             onKeyUp(oEvent) {
                 if ((oEvent.key === "ArrowUp" || oEvent.key === "ArrowDown") && oEvent.srcControl.sParentAggregationName === "rows") {
                     var oTable = this.byId(oEvent.srcControl.sId).oParent;
@@ -1349,9 +1148,9 @@ sap.ui.define([
                         })
 
                         oJSONModel.setData(oDDTextResult);
-                        _this.getView().setModel(oJSONModel, "ddtext");
+                        _this.getView().setModel(oJSONModel, "caption");
 
-                        _oCaption = _this.getView().getModel("ddtext").getData();
+                        _oCaption = _this.getView().getModel("caption").getData();
                     },
                     error: function(err) {
                         sap.m.MessageBox.error(err);
