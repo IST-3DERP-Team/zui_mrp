@@ -209,7 +209,7 @@ sap.ui.define([
                 }
 
                 var oSorter = new sap.ui.model.Sorter(sPath, bDescending ); //sorter(columnData, If Ascending(false) or Descending(True))
-                var oColumn = oColumns.filter(fItem => fItem.ColumnName === oEvent.getParameter("column").getProperty("sortProperty"));
+                var oColumn = pColumn.filter(fItem => fItem.ColumnName === oEvent.getParameter("column").getProperty("sortProperty"));
                 var columnType = oColumn[0].DataType;
 
                 if (columnType === "DATETIME") {

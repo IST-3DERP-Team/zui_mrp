@@ -302,20 +302,22 @@ sap.ui.define([
             },
 
             onRowSelectionChangeMrpHdr: function(oEvent) {
-                var sPath = oEvent.getParameters().rowContext.sPath;
+                if (oEvent.getParameters().rowContext) {
+                    var sPath = oEvent.getParameters().rowContext.sPath;
 
-                var sPlantCd = _this.getView().getModel("mrpHdr").getProperty(sPath).PLANTCD;
-                var sMatNo =  _this.getView().getModel("mrpHdr").getProperty(sPath).MATNO;
-                var sTransNo =  _this.getView().getModel("mrpHdr").getProperty(sPath).TRANSNO;
-                var sTransItm =  _this.getView().getModel("mrpHdr").getProperty(sPath).TRANSITM;
-
-                this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
-                this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
-                this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
-                this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
-                this.getView().getModel("ui").setProperty("/activeHdrRowPath", sPath);
-                
-                this.onRowChangedMrpHdr();
+                    var sPlantCd = _this.getView().getModel("mrpHdr").getProperty(sPath).PLANTCD;
+                    var sMatNo =  _this.getView().getModel("mrpHdr").getProperty(sPath).MATNO;
+                    var sTransNo =  _this.getView().getModel("mrpHdr").getProperty(sPath).TRANSNO;
+                    var sTransItm =  _this.getView().getModel("mrpHdr").getProperty(sPath).TRANSITM;
+    
+                    this.getView().getModel("ui").setProperty("/activePlantCd", sPlantCd);
+                    this.getView().getModel("ui").setProperty("/activeMatNo", sMatNo);
+                    this.getView().getModel("ui").setProperty("/activeTransNo", sTransNo);
+                    this.getView().getModel("ui").setProperty("/activeTransItm", sTransItm);
+                    this.getView().getModel("ui").setProperty("/activeHdrRowPath", sPath);
+                    
+                    this.onRowChangedMrpHdr();
+                }  
             },
 
             onCellClickMrpHdr: function(oEvent) {
