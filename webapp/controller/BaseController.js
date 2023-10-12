@@ -322,7 +322,7 @@ sap.ui.define([
 
         setRowEditMode(pModel) {
             var oTable = _this.byId(pModel + "Tab");
-            
+
             oTable.getColumns().forEach((col, idx) => {
                 var sColName = "";
 
@@ -403,10 +403,10 @@ sap.ui.define([
                             }
                             else if (ci.DataType === "NUMBER") {
                                 col.setTemplate(new sap.m.Input({
-                                    type: sap.m.InputType.Number,
+                                    type: "Text", //sap.m.InputType.Number,
                                     textAlign: sap.ui.core.TextAlign.Right,
                                     // value: "{" + pModel + ">" + sColName + "}",
-                                    value: "{path:'" + pModel + ">" + sColName + "', formatOptions:{ minFractionDigits:" + ci.scale + ", maxFractionDigits:" + ci.scale + " }, constraints:{ precision:" + ci.precision + ", scale:" + ci.scale + " }}",
+                                    value: "{path:'" + pModel + ">" + sColName + "', formatOptions:{ minFractionDigits:" + ci.Decimal + ", maxFractionDigits:" + ci.Decimal + " }, constraints:{ precision:" + ci.Length + ", scale:" + ci.Decimal + " }}",
                                     liveChange: this.onNumberLiveChange.bind(this), 
                                     enabled: true
                                 }));

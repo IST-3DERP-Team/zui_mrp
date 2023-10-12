@@ -705,14 +705,14 @@ sap.ui.define([
                                         })
 
                                         if (aMRCreated.length > 0) {
-                                            sMessage += "Below are successfully created MR: \n";
+                                            sMessage += "MR successfully created: \n";
                                             aMRCreated.forEach(item => {
                                                 sMessage += item + "\n";
                                             })
                                         }
 
                                         if (aPRCreated.length > 0) {
-                                            sMessage += "Below are successfully created PR: \n";
+                                            sMessage += "PR successfully created: \n";
                                             aPRCreated.forEach(item => {
                                                 sMessage += item + "\n";
                                             })
@@ -758,7 +758,7 @@ sap.ui.define([
                     this.byId("btnSaveMrpDtl").setVisible(true);
                     this.byId("btnCancelMrpDtl").setVisible(true);
                     // this.byId("btnRefreshMrpDtl").setVisible(false);
-                    this.byId("btnColPropMrpDtl").setVisible(false);
+                    // this.byId("btnColPropMrpDtl").setVisible(false);
                     this.byId("btnTabLayoutMrpDtl").setVisible(false);
 
                     // Disable header
@@ -772,7 +772,7 @@ sap.ui.define([
 
                     this._oDataBeforeChange = jQuery.extend(true, {}, this.getView().getModel("mrpDtl").getData());
 
-                    this.getView().getModel("mrpDtl").getData().results.forEach(item => item.FORMR = null);
+                    //this.getView().getModel("mrpDtl").getData().results.forEach(item => item.FORMR = null);
                     this.setRowEditMode("mrpDtl");
                 } else {
                     MessageBox.warning(_oCaption.INFO_NO_DATA_EDIT);
@@ -916,7 +916,7 @@ sap.ui.define([
                     })
 
                     this.getView().getModel("mrpHdr").setProperty(sRowPath + "/FORMR", dSumFormr.toFixed(3));
-
+                    console.log("FORMR", this.getView().getModel("mrpHdr").getData().results)
                     // Update Mrp Header column For Pr
                     var oMrpHdr = this.getView().getModel("mrpHdr").getProperty(sRowPath);
                     var dBalance = parseFloat(oMrpHdr.BALANCE - dSumFormr);
@@ -927,7 +927,7 @@ sap.ui.define([
                     this.byId("btnSaveMrpDtl").setVisible(false);
                     this.byId("btnCancelMrpDtl").setVisible(false);
                     // this.byId("btnRefreshMrpDtl").setVisible(true);
-                    this.byId("btnColPropMrpDtl").setVisible(true);
+                    // this.byId("btnColPropMrpDtl").setVisible(true);
                     this.byId("btnTabLayoutMrpDtl").setVisible(true);
                     this.setRowReadMode("mrpDtl");
                     this.byId("mrpHdrTab").setShowOverlay(false);
@@ -949,7 +949,7 @@ sap.ui.define([
                             _this.byId("btnSaveMrpDtl").setVisible(false);
                             _this.byId("btnCancelMrpDtl").setVisible(false);
                             // _this.byId("btnRefreshMrpDtl").setVisible(true);
-                            _this.byId("btnColPropMrpDtl").setVisible(true);
+                            // _this.byId("btnColPropMrpDtl").setVisible(true);
                             _this.byId("btnTabLayoutMrpDtl").setVisible(true);
 
                             // Disable header
