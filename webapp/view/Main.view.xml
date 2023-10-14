@@ -11,11 +11,11 @@
 
     <Page id="page" enableScrolling="false" class="sapUiNoContentPadding" showHeader="false">
         <dependents>
-            <!-- <core:CommandExecution id="CE_NEW" command="New" enabled="true" execute="onCreate('')" /> -->
-            <core:CommandExecution id="CE_EDIT" command="Edit" enabled="true" execute="onEditMrpDtl" />
+            <!-- <core:CommandExecution id="CE_NEW" command="New" enabled="true" execute="onAddHK" /> -->
+            <core:CommandExecution id="CE_EDIT" command="Edit" enabled="true" execute="onEditHK" />
             <!-- <core:CommandExecution id="CE_DELETE" command="Delete" enabled="true" execute="onDelete('')" /> -->
-            <core:CommandExecution id="CE_SAVE" command="Save" enabled="true" execute="onSaveMrpDtl" />
-            <core:CommandExecution id="CE_CANCEL" command="Cancel" enabled="true" execute="onCancelMrpDtl" />
+            <core:CommandExecution id="CE_SAVE" command="Save" enabled="true" execute="onSaveHK" />
+            <core:CommandExecution id="CE_CANCEL" command="Cancel" enabled="true" execute="onCancelHK" />
             <!-- <core:CommandExecution id="CE_REFRESH" command="Refresh" enabled="true" execute="onRefresh" /> -->
         </dependents>
         <content>
@@ -83,28 +83,42 @@
                     rowSelectionChange="onRowSelectionChangeMrpHdr">
                     <uiT:extension>
                         <Toolbar>
-                            <Text text="{ui>/rowCountMrpHdr} {caption>/ROWS}" />
+                            <Text text="{ui>/rowCountMrpHdr} {caption>/ITEM(S)}" />
                             <ToolbarSpacer/>
                             <Button id="btnCancelMrpHdr" 
                                 icon="sap-icon://sys-cancel"
                                 text="{caption>/CANCELMRP}"
+                                tooltip="{caption>/CANCELMRP}"
                                 press="onCancelMrpHdr()"
                                 visible="true"/>
                             <Button id="btnReserveMrpHdr" 
                                 icon="sap-icon://basket"
                                 text="{caption>/RESERVE}"
+                                tooltip="{caption>/RESERVE}"
                                 press="onReserveMrpHdr(false)"
                                 visible="false"/>
                             <Button id="btnResetMrpHdr" 
                                 icon="sap-icon://reset"
                                 text="{caption>/RESET}"
+                                tooltip="{caption>/RESET}"
                                 press="onResetMrpHdr"
                                 visible="true"/>
                             <Button id="btnExecuteMrpHdr" 
                                 icon="sap-icon://feeder-arrow"
                                 text="{caption>/EXECUTE}"
+                                tooltip="{caption>/EXECUTE}"
                                 press="onExecuteMrpHdr" 
                                 visible="true" />
+                            <Button id="btnFullScreenMrpHdr" 
+                                icon="sap-icon://full-screen"
+                                press="onTableResize('hdr','Max')"
+                                tooltip="{caption>/FULLSCREEN}"
+                                visible="true" />
+                            <Button id="btnExitFullScreenMrpHdr" 
+                                icon="sap-icon://exit-full-screen"
+                                press="onTableResize('hdr','Min')"
+                                tooltip="{caption>/EXITFULLSCREEN}"
+                                visible="false" />
                             <Button id="btnTabLayoutMrpHdr"
                                 icon="sap-icon://grid" 
                                 tooltip="{caption>/SAVELAYOUT}" 
@@ -141,28 +155,42 @@
                     rowSelectionChange="onRowSelectionChangeMrpDtl">
                     <uiT:extension>
                         <Toolbar>
-                            <Text text="{ui>/rowCountMrpDtl} {caption>/ROWS}" />
+                            <Text text="{ui>/rowCountMrpDtl} {caption>/ITEM(S)}" />
                             <ToolbarSpacer/>
                             <Button id="btnEditMrpDtl"
                                 icon="sap-icon://edit"
-                                text="{caption>/EDIT}"
+                                text=""
+                                tooltip="{caption>/EDIT}"
                                 press="onEditMrpDtl"
                                 visible="true"/>
                             <Button id="btnSaveMrpDtl" 
                                 icon="sap-icon://save"
-                                text="{caption>/SAVE}"
+                                text=""
+                                tooltip="{caption>/SAVE}"
                                 press="onSaveMrpDtl" 
                                 visible="false" />
                             <Button id="btnCancelMrpDtl" 
-                                icon="sap-icon://sys-cancel"
-                                text="{caption>/CANCEL}"
+                                icon="sap-icon://decline"
+                                text=""
+                                tooltip="{caption>/CANCEL}"
                                 press="onCancelMrpDtl" 
                                 visible="false" />                                        
                             <Button id="btnRefreshMrpDtl" 
                                 icon="sap-icon://refresh"
-                                text="{caption>/REFRESH}"
+                                text=""
+                                tooltip="{caption>/REFRESH}"
                                 press="onRefreshMrpDtl"
-                                visible="false"/> 
+                                visible="false"/>
+                            <Button id="btnFullScreenMrpDtl" 
+                                icon="sap-icon://full-screen"
+                                press="onTableResize('dtl','Max')"
+                                tooltip="{caption>/FULLSCREEN}"
+                                visible="true" />
+                            <Button id="btnExitFullScreenMrpDtl" 
+                                icon="sap-icon://exit-full-screen"
+                                press="onTableResize('dtl','Min')"
+                                tooltip="{caption>/EXITFULLSCREEN}"
+                                visible="false" />
                             <Button id="btnTabLayoutMrpDtl"
                                 icon="sap-icon://grid" 
                                 tooltip="{caption>/SAVELAYOUT}"

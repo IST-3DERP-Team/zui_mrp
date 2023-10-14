@@ -93,12 +93,18 @@ sap.ui.define([
                 var aSmartFilter = this.getView().byId("sfbMRP").getFilters();
                 if (aSmartFilter.length == 0) {
                     // Disable all buttons
+
+                    // Header
                     this.byId("btnCancelMrpHdr").setEnabled(false);
                     this.byId("btnResetMrpHdr").setEnabled(false);
                     this.byId("btnExecuteMrpHdr").setEnabled(false);
+                    this.byId("btnFullScreenMrpHdr").setEnabled(false);
                     this.byId("btnTabLayoutMrpHdr").setEnabled(false);
+
+                    // Detail
                     this.byId("btnEditMrpDtl").setEnabled(false);
                     this.byId("btnRefreshMrpDtl").setEnabled(false);
+                    this.byId("btnFullScreenMrpDtl").setEnabled(false);
                     this.byId("btnTabLayoutMrpDtl").setEnabled(false);
                 }
 
@@ -110,12 +116,17 @@ sap.ui.define([
 
                     onAfterRendering: function(oEvent) {
                         _this.onAfterTableRendering(oEvent);
+                    },
+
+                    onclick: function(oEvent) {
+                        _this.onTableClick(oEvent);
                     }
                 };
 
                 this.byId("mrpHdrTab").addEventDelegate(oTableEventDelegate);
                 this.byId("mrpDtlTab").addEventDelegate(oTableEventDelegate);
 
+                this._sActiveTable = "mrpHdrTab";
                 _this.closeLoadingDialog();
             },
 
@@ -166,15 +177,20 @@ sap.ui.define([
                 this.getMrpHdr(aSmartFilter, sSmartFilterGlobal);
                 this.getProcurePlant();
 
+                // Header
                 this.byId("btnCancelMrpHdr").setEnabled(true);
                 // this.byId("btnReserveMrpHdr").setEnabled(true);
                 this.byId("btnResetMrpHdr").setEnabled(true);
                 this.byId("btnExecuteMrpHdr").setEnabled(true);
                 // this.byId("btnColPropMrpHdr").setEnabled(true);
+                this.byId("btnFullScreenMrpHdr").setEnabled(true);
                 this.byId("btnTabLayoutMrpHdr").setEnabled(true);
+
+                // Detail
                 this.byId("btnEditMrpDtl").setEnabled(true);
                 // this.byId("btnRefreshMrpDtl").setEnabled(true);
                 // this.byId("btnColPropMrpDtl").setEnabled(true);
+                this.byId("btnFullScreenMrpDtl").setEnabled(true);
                 this.byId("btnTabLayoutMrpDtl").setEnabled(true);
             },
 
@@ -186,15 +202,11 @@ sap.ui.define([
                         console.log("MRPHeaderViewSet", data)
                         if (data.results.length > 0) {
 
-                            data.results.forEach((item, index) => {
+                            data.results.forEach((item, idx) => {
                                 item.WITHRESERVED = false;
 
-                                if (index === 0) {
-                                    item.Active = true;
-                                }
-                                else {
-                                    item.Active = false;
-                                }
+                                if (idx == 0) item.ACTIVE = "X";
+                                else item.ACTIVE = "";
                             });
 
                             var aFilterTab = [];
@@ -376,6 +388,11 @@ sap.ui.define([
                         item.FORMR = (oFormr.length > 0 ? oFormr[0].FORMR : 0.000);
                     }
                 })
+
+                aMrpDtl.results.forEach((item, idx) => {
+                    if (idx == 0) item.ACTIVE = "X";
+                    else item.ACTIVE = "";
+                });
                 
                 var oJSONModel = new sap.ui.model.json.JSONModel();
                 oJSONModel.setData(aMrpDtl);
@@ -539,6 +556,12 @@ sap.ui.define([
                                     })
 
                                     aMrpDtl.results.push(...aReserveList.filter(x => x.PLANTCD == sPlantCd && x.HDRMATNO == sMatNo));
+
+                                    aMrpDtl.results.forEach((item, idx) => {
+                                        if (idx == 0) item.ACTIVE = "X";
+                                        else item.ACTIVE = "";
+                                    });
+
                                     oJSONModel.setData(aMrpDtl);
                                     _this.getView().setModel(oJSONModel, "mrpDtl");
                                     _this._tableRendered = "mrpDtlTab";
@@ -759,6 +782,8 @@ sap.ui.define([
                     this.byId("btnCancelMrpDtl").setVisible(true);
                     // this.byId("btnRefreshMrpDtl").setVisible(false);
                     // this.byId("btnColPropMrpDtl").setVisible(false);
+                    this.byId("btnFullScreenMrpDtl").setVisible(false);
+                    this.byId("btnExitFullScreenMrpDtl").setVisible(false);
                     this.byId("btnTabLayoutMrpDtl").setVisible(false);
 
                     // Disable header
@@ -776,6 +801,24 @@ sap.ui.define([
                     this.setRowEditMode("mrpDtl");
                 } else {
                     MessageBox.warning(_oCaption.INFO_NO_DATA_EDIT);
+                }
+            },
+
+            onEditHK() {
+                if (_this.getView().getModel("base").getData().dataMode == "READ" && _this.getView().getModel("base").getData().appChange) {
+                    if (this._sActiveTable === "mrpDtlTab") this.onEditMrpDtl();
+                }
+            },
+
+            onSaveHK() {
+                if (_this.getView().getModel("base").getData().dataMode == "EDIT") {
+                    if (this._sActiveTable === "mrpDtlTab") this.onSaveMrpDtl();
+                }
+            },
+
+            onCancelHK() {
+                if (_this.getView().getModel("base").getData().dataMode == "EDIT") {
+                    if (this._sActiveTable === "mrpDtlTab") this.onCancelMrpDtl();
                 }
             },
 
@@ -928,6 +971,10 @@ sap.ui.define([
                     this.byId("btnCancelMrpDtl").setVisible(false);
                     // this.byId("btnRefreshMrpDtl").setVisible(true);
                     // this.byId("btnColPropMrpDtl").setVisible(true);
+
+                    if (this.byId("mrpHdrTab").getVisible()) this.byId("btnFullScreenMrpDtl").setVisible(true);
+                    else this.byId("btnExitFullScreenMrpDtl").setVisible(true);
+
                     this.byId("btnTabLayoutMrpDtl").setVisible(true);
                     this.setRowReadMode("mrpDtl");
                     this.byId("mrpHdrTab").setShowOverlay(false);
@@ -950,6 +997,10 @@ sap.ui.define([
                             _this.byId("btnCancelMrpDtl").setVisible(false);
                             // _this.byId("btnRefreshMrpDtl").setVisible(true);
                             // _this.byId("btnColPropMrpDtl").setVisible(true);
+
+                            if (_this.byId("mrpHdrTab").getVisible()) _this.byId("btnFullScreenMrpDtl").setVisible(true);
+                            else _this.byId("btnExitFullScreenMrpDtl").setVisible(true);
+
                             _this.byId("btnTabLayoutMrpDtl").setVisible(true);
 
                             // Disable header
@@ -978,11 +1029,13 @@ sap.ui.define([
                 this.byId("btnCancelMrpHdr").setVisible(pChange);
                 this.byId("btnResetMrpHdr").setVisible(pChange);
                 this.byId("btnExecuteMrpHdr").setVisible(pChange);
+                this.byId("btnFullScreenMrpHdr").setVisible(true);
                 this.byId("btnTabLayoutMrpHdr").setVisible(true);
 
                 // Detail
                 this.byId("btnEditMrpDtl").setVisible(pChange);
                 //this.byId("btnRefreshMrpDtl").setVisible(true);
+                this.byId("btnFullScreenMrpDtl").setVisible(true);
                 this.byId("btnTabLayoutMrpDtl").setVisible(true);
             },
 
@@ -1029,6 +1082,41 @@ sap.ui.define([
                                 else row.removeStyleClass("activeRow")
                             })
                         }
+                    }
+                }
+            },
+
+            onTableResize(pGroup, pType) {
+                if (pGroup == "hdr") {
+                    if (pType === "Max") {
+                        this.byId("btnFullScreenMrpHdr").setVisible(false);
+                        this.byId("btnExitFullScreenMrpHdr").setVisible(true);
+
+                        this.getView().byId("mrpHdrTab").setVisible(true);
+                        this.getView().byId("mrpDtlTab").setVisible(false);
+                    }
+                    else {
+                        this.byId("btnFullScreenMrpHdr").setVisible(true);
+                        this.byId("btnExitFullScreenMrpHdr").setVisible(false);
+
+                        this.getView().byId("mrpHdrTab").setVisible(true);
+                        this.getView().byId("mrpDtlTab").setVisible(true);
+                    }
+                }
+                else if (pGroup == "dtl") {
+                    if (pType === "Max") {
+                        this.byId("btnFullScreenMrpDtl").setVisible(false);
+                        this.byId("btnExitFullScreenMrpDtl").setVisible(true);
+
+                        this.getView().byId("mrpHdrTab").setVisible(false);
+                        this.getView().byId("mrpDtlTab").setVisible(true);
+                    }
+                    else {
+                        this.byId("btnFullScreenMrpDtl").setVisible(true);
+                        this.byId("btnExitFullScreenMrpDtl").setVisible(false);
+
+                        this.getView().byId("mrpHdrTab").setVisible(true);
+                        this.getView().byId("mrpDtlTab").setVisible(true);
                     }
                 }
             },
@@ -1109,6 +1197,7 @@ sap.ui.define([
 
                 // Label
                 oDDTextParam.push({CODE: "ROWS"});
+                oDDTextParam.push({CODE: "ITEM(S)"});
 
                 // Button
                 oDDTextParam.push({CODE: "CANCELMRP"});
@@ -1116,6 +1205,8 @@ sap.ui.define([
                 oDDTextParam.push({CODE: "RESET"});
                 oDDTextParam.push({CODE: "EXECUTE"});
                 oDDTextParam.push({CODE: "COLUMNS"});
+                oDDTextParam.push({CODE: "FULLSCREEN"});
+                oDDTextParam.push({CODE: "EXITFULLSCREEN"});
                 oDDTextParam.push({CODE: "SAVELAYOUT"});
                 oDDTextParam.push({CODE: "EDIT"});
                 oDDTextParam.push({CODE: "SAVE"});

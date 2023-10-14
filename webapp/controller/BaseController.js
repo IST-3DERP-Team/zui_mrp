@@ -104,6 +104,7 @@ sap.ui.define([
                             
                             _this._aColumns[tblModel] = _this.setTableColumns(tblId, tblModel, oData.results)["columns"];
                             _this.setRowReadMode(tblModel);
+                            _this.getView().getModel("base").setProperty("/dataMode", "INIT");
                             
                             var tblProps = {
                                 aColumns: _this._aColumns[tblModel]
@@ -142,7 +143,7 @@ sap.ui.define([
                 if (sColumnType === "NUMBER") {
                     return new sap.ui.table.Column({
                         id: pModel + "-" + sColumnId,
-                        label: sColumnLabel,
+                        label: new sap.m.Text({text: sColumnLabel}),
                         template: new sap.m.Text({ text: "{" + sColumnId + "}", wrapping: false }),
                         width: sColumnWidth + "px",
                         hAlign: "End",
@@ -156,7 +157,7 @@ sap.ui.define([
                 } else if (sColumnType === "BOOLEAN") {
                     return new sap.ui.table.Column({
                         id: pModel + "-" + sColumnId,
-                        label: sColumnLabel,
+                        label: new sap.m.Text({text: sColumnLabel}),
                         template: new sap.m.CheckBox({
                             selected: "{" + sColumnId + "}",
                             editable: false
@@ -173,7 +174,7 @@ sap.ui.define([
                 } else {
                     return new sap.ui.table.Column({
                         id: pModel + "-" + sColumnId,
-                        label: sColumnLabel,
+                        label: new sap.m.Text({text: sColumnLabel}),
                         template: _this.columnTemplate(sColumnId),
                         width: sColumnWidth + "px",
                         hAlign: "Left",
@@ -318,10 +319,18 @@ sap.ui.define([
             
             TableFilter.applyColFilters(_this);
             _this.setReqColHdrColor(pModel);
+
+            _this.getView().getModel("base").setProperty("/dataMode", "READ");
         },
 
         setRowEditMode(pModel) {
             var oTable = _this.byId(pModel + "Tab");
+
+            var oInputEventDelegate = {
+                onkeydown: function(oEvent){
+                    _this.onInputKeyDown(oEvent);
+                },
+            };
 
             oTable.getColumns().forEach((col, idx) => {
                 var sColName = "";
@@ -393,6 +402,8 @@ sap.ui.define([
                                     });
                                 }
 
+                                oInput.addEventDelegate(oInputEventDelegate);
+
                                 col.setTemplate(oInput);
                             }
                             else if (ci.DataType === "BOOLEAN") {
@@ -403,13 +414,13 @@ sap.ui.define([
                             }
                             else if (ci.DataType === "NUMBER") {
                                 col.setTemplate(new sap.m.Input({
-                                    type: "Text", //sap.m.InputType.Number,
+                                    type: sap.m.InputType.Number,
                                     textAlign: sap.ui.core.TextAlign.Right,
                                     // value: "{" + pModel + ">" + sColName + "}",
                                     value: "{path:'" + pModel + ">" + sColName + "', formatOptions:{ minFractionDigits:" + ci.Decimal + ", maxFractionDigits:" + ci.Decimal + " }, constraints:{ precision:" + ci.Length + ", scale:" + ci.Decimal + " }}",
                                     liveChange: this.onNumberLiveChange.bind(this), 
                                     enabled: true
-                                }));
+                                }).addEventDelegate(oInputEventDelegate));
                             }
                             else if (ci.DataType === "DATE") {
                                 col.setTemplate(new sap.m.DatePicker({
@@ -424,7 +435,7 @@ sap.ui.define([
                                 col.setTemplate(new sap.m.Input({
                                     value: "{" + pModel + ">" + sColName + "}",
                                     liveChange: this.onInputLiveChange.bind(this)
-                                }));
+                                }).addEventDelegate(oInputEventDelegate));
                             }
                         }
 
@@ -436,6 +447,8 @@ sap.ui.define([
             })
 
             _this.getView().getModel(pModel).getData().results.forEach(item => item.EDITED = false);
+
+            _this.getView().getModel("base").setProperty("/dataMode", "EDIT");
         },
 
         handleValueHelp: function(oEvent) {
@@ -767,6 +780,18 @@ sap.ui.define([
             } 
         },
 
+        onTableClick(oEvent) {
+            var oControl = oEvent.srcControl;
+            var sTabId = oControl.sId.split("--")[oControl.sId.split("--").length - 1];
+
+            while (sTabId.substr(sTabId.length - 3) !== "Tab") {                    
+                oControl = oControl.oParent;
+                sTabId = oControl.sId.split("--")[oControl.sId.split("--").length - 1];
+            }
+            
+            this._sActiveTable = sTabId;
+        },
+
         onFirstVisibleRowChanged: function (oEvent) {
             var oSource = oEvent.getSource();
             var sModel = oSource.mBindingInfos.rows.model;
@@ -845,6 +870,89 @@ sap.ui.define([
                 //oCell.focus();
                 document.getElementById(sInputId + "-inner").select();
             }, 1);
+        },
+
+        onInputKeyDown(oEvent) {
+            if (oEvent.key === "ArrowUp" || oEvent.key === "ArrowDown") {
+                //prevent increase/decrease of number value
+                oEvent.preventDefault();
+                
+                var sTableId = oEvent.srcControl.oParent.oParent.sId;
+                var oTable = _this.byId(sTableId);
+                var sModel = oEvent.srcControl.oParent.oParent.mBindingInfos.rows.model;
+                var sColumnName = oEvent.srcControl.getBindingInfo("value").parts[0].path;
+                var sCurrentRowIndex = +oEvent.srcControl.oParent.oBindingContexts[sModel].sPath.replace("/results/", "");
+                var sColumnIndex = -1;
+                var sCurrentRow = -1;
+                var sNextRow = -1;
+                var sActiveRow = -1;
+                var iFirstVisibleRowIndex = oTable.getFirstVisibleRow();
+                var iVisibleRowCount = oTable.getVisibleRowCount();
+                
+                // oTable.getModel().setProperty(oEvent.srcControl.oParent.getBindingContext().sPath + "/" + oEvent.srcControl.getBindingInfo("value").parts[0].path, oEvent.srcControl.getValue());
+                
+                //get active row (arrow down)
+                oTable.getBinding("rows").aIndices.forEach((item, index) => {
+                    if (item === sCurrentRowIndex) { sCurrentRow = index; }
+                    if (sCurrentRow !== -1 && sActiveRow === -1) { 
+                        if ((sCurrentRow + 1) === index) { sActiveRow = item }
+                        else if ((index + 1) === oTable.getBinding("rows").aIndices.length) { sActiveRow = item }
+                    }
+                })
+                
+                //clear active row
+                
+                oTable.getModel().getData().rows.forEach(row => row.ACTIVE = "");
+                _this.getView().getModel(sModel).getData().results.forEach(item => {
+                    item.ACTIVE = "";
+                });
+
+                //get next row to focus and active row (arrow up)
+                if (oEvent.key === "ArrowUp") { 
+                    if (sCurrentRow !== 0) {
+                        sActiveRow = oTable.getBinding("rows").aIndices.filter((fItem, fIndex) => fIndex === (sCurrentRow - 1))[0];
+                    }
+                    else { sActiveRow = oTable.getBinding("rows").aIndices[0] }
+
+                    sCurrentRow = sCurrentRow === 0 ? sCurrentRow : sCurrentRow - iFirstVisibleRowIndex;
+                    sNextRow = sCurrentRow === 0 ? 0 : sCurrentRow - 1;
+                }
+                else if (oEvent.key === "ArrowDown") { 
+                    sCurrentRow = sCurrentRow - iFirstVisibleRowIndex;
+                    sNextRow = sCurrentRow + 1;
+                }
+
+                //set active row
+                _this.getView().getModel(sModel).setProperty("/results/" + sActiveRow + "/ACTIVE", "X");
+
+                //auto-scroll up/down
+                if (oEvent.key === "ArrowDown" && (sNextRow + 1) < oTable.getModel().getData().rows.length && (sNextRow + 1) > iVisibleRowCount) {
+                    oTable.setFirstVisibleRow(iFirstVisibleRowIndex + 1);
+                }   
+                else if (oEvent.key === "ArrowUp" && sCurrentRow === 0 && sNextRow === 0 && iFirstVisibleRowIndex !== 0) { 
+                    oTable.setFirstVisibleRow(iFirstVisibleRowIndex - 1);
+                }
+
+                //get the cell to focus
+                oTable.getRows()[sCurrentRow].getCells().forEach((cell, index) => {
+                    if (cell.getBindingInfo("value") !== undefined) {
+                        if (cell.getBindingInfo("value").parts[0].path === sColumnName) { sColumnIndex = index; }
+                    }
+                })
+                
+                if (oEvent.key === "ArrowDown") {
+                    sNextRow = sNextRow === iVisibleRowCount ? sNextRow - 1 : sNextRow;
+                }
+
+                //set focus on cell
+                setTimeout(() => {
+                    oTable.getRows()[sNextRow].getCells()[sColumnIndex].focus();
+                    oTable.getRows()[sNextRow].getCells()[sColumnIndex].getFocusDomRef().select();
+                }, 100);
+
+                //set row highlight
+                _this.setActiveRowHighlight(sModel);
+            }
         },
 
         onCellClick: function(oEvent) {
