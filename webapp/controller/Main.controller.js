@@ -899,10 +899,10 @@ sap.ui.define([
                     return;
                 }
 
-                if (aEditedRows.filter(x => x.FORMR != 0).length == 0) {
-                    MessageBox.warning(_oCaption.WARN_NO_DATA_MODIFIED);
-                    return;
-                }
+                // if (aEditedRows.filter(x => x.FORMR != 0).length == 0) {
+                //     MessageBox.warning(_oCaption.WARN_NO_DATA_MODIFIED);
+                //     return;
+                // }
 
                 var sRowPath = this.getView().getModel("ui").getProperty("/activeHdrRowPath");
                 var oDataHdr = this.getView().getModel("mrpHdr").getProperty(sRowPath);
