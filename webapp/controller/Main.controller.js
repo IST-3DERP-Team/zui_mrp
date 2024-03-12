@@ -1092,15 +1092,23 @@ sap.ui.define([
                         this.byId("btnFullScreenMrpHdr").setVisible(false);
                         this.byId("btnExitFullScreenMrpHdr").setVisible(true);
 
-                        this.getView().byId("mrpHdrTab").setVisible(true);
-                        this.getView().byId("mrpDtlTab").setVisible(false);
+                        // this.getView().byId("mrpHdrTab").setVisible(true);
+                        // this.getView().byId("mrpDtlTab").setVisible(false);
+
+                        var oSplitter = new sap.ui.layout.SplitterLayoutData({size: "100%"});
+                        var oCont = this.byId("mrpHdrTab");
+                        oCont.setLayoutData(oSplitter);
                     }
                     else {
                         this.byId("btnFullScreenMrpHdr").setVisible(true);
                         this.byId("btnExitFullScreenMrpHdr").setVisible(false);
 
-                        this.getView().byId("mrpHdrTab").setVisible(true);
-                        this.getView().byId("mrpDtlTab").setVisible(true);
+                        // this.getView().byId("mrpHdrTab").setVisible(true);
+                        // this.getView().byId("mrpDtlTab").setVisible(true);
+
+                        var oSplitter = new sap.ui.layout.SplitterLayoutData({size: "50%"});
+                        var oCont = this.byId("mrpHdrTab");
+                        oCont.setLayoutData(oSplitter);
                     }
                 }
                 else if (pGroup == "dtl") {
@@ -1108,15 +1116,31 @@ sap.ui.define([
                         this.byId("btnFullScreenMrpDtl").setVisible(false);
                         this.byId("btnExitFullScreenMrpDtl").setVisible(true);
 
-                        this.getView().byId("mrpHdrTab").setVisible(false);
-                        this.getView().byId("mrpDtlTab").setVisible(true);
+                        // this.getView().byId("mrpHdrTab").setVisible(false);
+                        // this.getView().byId("mrpDtlTab").setVisible(true);
+
+                        var oSplitter1 = new sap.ui.layout.SplitterLayoutData({size: "0%"});
+                        var oCont1 = this.byId("mrpHdrTab");
+                        oCont1.setLayoutData(oSplitter1);
+
+                        var oSplitter2 = new sap.ui.layout.SplitterLayoutData({size: "100%"});
+                        var oCont2 = this.byId("mrpDtlTab");
+                        oCont2.setLayoutData(oSplitter2);
                     }
                     else {
                         this.byId("btnFullScreenMrpDtl").setVisible(true);
                         this.byId("btnExitFullScreenMrpDtl").setVisible(false);
 
-                        this.getView().byId("mrpHdrTab").setVisible(true);
-                        this.getView().byId("mrpDtlTab").setVisible(true);
+                        // this.getView().byId("mrpHdrTab").setVisible(true);
+                        // this.getView().byId("mrpDtlTab").setVisible(true);
+
+                        var oSplitter1 = new sap.ui.layout.SplitterLayoutData({size: "50%"});
+                        var oCont1 = this.byId("mrpHdrTab");
+                        oCont1.setLayoutData(oSplitter1);
+
+                        var oSplitter2 = new sap.ui.layout.SplitterLayoutData({size: "50%"});
+                        var oCont2 = this.byId("mrpDtlTab");
+                        oCont2.setLayoutData(oSplitter2);
                     }
                 }
             },

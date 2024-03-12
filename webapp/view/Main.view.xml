@@ -19,50 +19,50 @@
             <!-- <core:CommandExecution id="CE_REFRESH" command="Refresh" enabled="true" execute="onRefresh" /> -->
         </dependents>
         <content>
+            <sfb:SmartFilterBar id="sfbMRP" entitySet="ZVB_3DERP_MRPFILTER" enableBasicSearch="true" search="onSearchMrpHdr" 
+                persistencyKey="3DERP_MRPKey" filterContainerWidth="14rem" useToolbar="true" showClearOnFB="true" initialise="onSFBInitialise">
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="{caption>/PLANTCD}" controlType="dropDownList" 
+                        displayBehaviour="idAndDescription" mandatory="mandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterPurchGrp" key="PURCHGRP" groupId="_BASIC" label="{caption>/PURCHGRP}" controlType="dropDownList" 
+                        displayBehaviour="idAndDescription" mandatory="notMandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{caption>/IONO}"
+                        preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idAndDescription" mandatory="notMandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterMatType" key="MATTYPE" groupId="_BASIC" label="{caption>/MATTYPE}" controlType="dropDownList" 
+                        displayBehaviour="idAndDescription" mandatory="notMandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="{caption>/MATGRP}" controlType="dropDownList" 
+                        displayBehaviour="idAndDescription" mandatory="notMandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="{caption>/CUSTGRP}" controlType="dropDownList" 
+                        displayBehaviour="idAndDescription" mandatory="notMandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:controlConfiguration>
+                    <sfb:ControlConfiguration id="filterMatNo" key="MATNO" groupId="_BASIC" label="{caption>/MATNO}"
+                        preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idOnly" mandatory="notMandatory">
+                    </sfb:ControlConfiguration>
+                </sfb:controlConfiguration>
+                <sfb:layoutData>
+                    <FlexItemData shrinkFactor="0"/>
+                </sfb:layoutData>
+            </sfb:SmartFilterBar>
 
-            <VBox id="vbMRP" fitContainer="true">
-                <sfb:SmartFilterBar id="sfbMRP" entitySet="ZVB_3DERP_MRPFILTER" enableBasicSearch="true" search="onSearchMrpHdr" 
-                    persistencyKey="3DERP_MRPKey" filterContainerWidth="14rem" useToolbar="true" showClearOnFB="true" initialise="onSFBInitialise">
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterPlant" key="PLANTCD" groupId="_BASIC" label="{caption>/PLANTCD}" controlType="dropDownList" 
-                            displayBehaviour="idAndDescription" mandatory="mandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterPurchGrp" key="PURCHGRP" groupId="_BASIC" label="{caption>/PURCHGRP}" controlType="dropDownList" 
-                            displayBehaviour="idAndDescription" mandatory="notMandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterIONo" key="IONO" groupId="_BASIC" label="{caption>/IONO}"
-                            preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idAndDescription" mandatory="notMandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterMatType" key="MATTYPE" groupId="_BASIC" label="{caption>/MATTYPE}" controlType="dropDownList" 
-                            displayBehaviour="idAndDescription" mandatory="notMandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterMatGrp" key="MATGRP" groupId="_BASIC" label="{caption>/MATGRP}" controlType="dropDownList" 
-                            displayBehaviour="idAndDescription" mandatory="notMandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterCustGrp" key="CUSTGRP" groupId="_BASIC" label="{caption>/CUSTGRP}" controlType="dropDownList" 
-                            displayBehaviour="idAndDescription" mandatory="notMandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:controlConfiguration>
-                        <sfb:ControlConfiguration id="filterMatNo" key="MATNO" groupId="_BASIC" label="{caption>/MATNO}"
-                            preventInitialDataFetchInValueHelpDialog="false" displayBehaviour="idOnly" mandatory="notMandatory">
-                        </sfb:ControlConfiguration>
-                    </sfb:controlConfiguration>
-                    <sfb:layoutData>
-                        <FlexItemData shrinkFactor="0"/>
-                    </sfb:layoutData>
-                </sfb:SmartFilterBar>
-
+            <!-- <VBox id="vbMRP" fitContainer="true"> -->
+            <uiL:Splitter id="splitMain" orientation="Vertical" height="76%" width="100%">    
                 <uiT:Table id="mrpHdrTab"
                     class="tablePadding"
                     rows="{mrpHdr>/results}"
@@ -129,8 +129,11 @@
                     <uiT:rowSettingsTemplate>
                         <uiT:RowSettings highlight="{= ${mrpHdr>WITHRESERVED} ? 'Success' : null}" />
                     </uiT:rowSettingsTemplate>
-                    <uiT:layoutData>
+                    <!-- <uiT:layoutData>
                         <FlexItemData growFactor="1" baseSize="0%"/>
+                    </uiT:layoutData> -->
+                    <uiT:layoutData>
+                        <uiL:SplitterLayoutData size="50%" />
                     </uiT:layoutData>
                 </uiT:Table>
                 
@@ -198,12 +201,19 @@
                                 visible="true" />
                         </Toolbar>
                     </uiT:extension>
-                    <uiT:layoutData>
+                    <!-- <uiT:layoutData>
                         <FlexItemData growFactor="1" baseSize="0%"/>
+                    </uiT:layoutData> -->
+                    <uiT:layoutData>
+                        <uiL:SplitterLayoutData size="50%" />
                     </uiT:layoutData>
                 </uiT:Table>
 
-            </VBox>
+                <uiL:layoutData>
+                    <uiL:SplitterLayoutData size="auto" />
+                </uiL:layoutData>
+            </uiL:Splitter>
+            <!-- </VBox> -->
 
         </content>
     </Page>
